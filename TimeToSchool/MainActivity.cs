@@ -1,11 +1,11 @@
 ﻿using Android.App;
+using Android.Graphics;
 using Android.OS;
+using Android.Views;
 using Android.Widget;
 using AndroidX.AppCompat.App;
-using Android.Graphics;
-using Android.Views;
+using Google.Android.Material.TextField;
 using System;
-
 namespace TimeToSchool
 {
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme", MainLauncher = true)]
@@ -45,14 +45,21 @@ namespace TimeToSchool
             autoTown = FindViewById<AutoCompleteTextView>(Resource.Id.autoTown);
             autoBus = FindViewById<AutoCompleteTextView>(Resource.Id.autoBus);
             btnSignIn = FindViewById<Button>(Resource.Id.btnSignIn);
+
+            // Start with Town and Bus disabled
+            SetFieldEnabled(autoTown, false);
+            SetFieldEnabled(autoBus, false);
         }
 
         private void SetupAdapters()
         {
-            // Pulls data from the Repository class
-            autoSchool.Adapter = CreateAdapter(_repository.GetSchools());
-            autoTown.Adapter = CreateAdapter(_repository.GetTowns());
-            autoBus.Adapter = CreateAdapter(_repository.GetBuses());
+            // We only load Schools at the start. 
+            // Towns and Buses are empty because we don't know the school yet!
+            autoSchool.Adapter = CreateAdapter(_repository.GetSchools().ToArray());
+
+            // Set empty adapters for the others so they don't crash
+            autoTown.Adapter = CreateAdapter(new string[] { });
+            autoBus.Adapter = CreateAdapter(new string[] { });
         }
 
         private void SetupDropdownBehavior()
@@ -61,22 +68,65 @@ namespace TimeToSchool
             ConfigureSearchableField(autoTown);
             ConfigureSearchableField(autoBus);
         }
+        private void SetFieldEnabled(AutoCompleteTextView view, bool isEnabled)
+        {
+            view.Enabled = isEnabled;
+            // Dim the view to 50% opacity if disabled, 100% if enabled
+            view.Alpha = isEnabled ? 1.0f : 0.5f;
 
+            // Also disable the parent TextInputLayout to dim the outline/label
+            var parent = view.Parent.Parent as TextInputLayout;
+            if (parent != null)
+            {
+                parent.Enabled = isEnabled;
+            }
+        }
         private void SetupEvents()
         {
-            // Text changes for validation
+            // Selection Events
+            autoSchool.ItemClick += OnSchoolSelected;
+            autoTown.ItemClick += OnTownSelected;
+            autoBus.ItemClick += (s, e) => HideKeyboard();
+
+            // Validation Events
             autoSchool.TextChanged += (s, e) => ValidateFields();
             autoTown.TextChanged += (s, e) => ValidateFields();
             autoBus.TextChanged += (s, e) => ValidateFields();
 
-            // Keyboard dismissal on selection
-            autoSchool.ItemClick += (s, e) => HideKeyboard();
-            autoTown.ItemClick += (s, e) => HideKeyboard();
-            autoBus.ItemClick += (s, e) => HideKeyboard();
-
+            // Action Events
             btnSignIn.Click += (s, e) => OnSignInClicked();
         }
+        private void OnSchoolSelected(object sender, AdapterView.ItemClickEventArgs e)
+        {
+            string selectedSchool = autoSchool.Text;
 
+            // Reset and Update UI State
+            autoTown.Text = string.Empty;
+            autoBus.Text = string.Empty;
+            SetFieldEnabled(autoTown, true);
+            SetFieldEnabled(autoBus, false);
+
+            // Update Data
+            var filteredTowns = _repository.GetTownsForSchool(selectedSchool);
+            autoTown.Adapter = CreateAdapter(filteredTowns.ToArray());
+
+            HideKeyboard();
+        }
+        private void OnTownSelected(object sender, AdapterView.ItemClickEventArgs e)
+        {
+            string selectedSchool = autoSchool.Text;
+            string selectedTown = autoTown.Text;
+
+            // Reset and Update UI State
+            autoBus.Text = string.Empty;
+            SetFieldEnabled(autoBus, true);
+
+            // Update Data
+            var filteredBuses = _repository.GetBusesForRoute(selectedSchool, selectedTown);
+            autoBus.Adapter = CreateAdapter(filteredBuses.ToArray());
+
+            HideKeyboard();
+        }
         private void ValidateFields()
         {
             // Delegates logic to the Validator class
@@ -88,7 +138,11 @@ namespace TimeToSchool
 
         private void OnSignInClicked()
         {
-            Toast.MakeText(this, $"Signing into {autoSchool.Text}...", ToastLength.Short).Show();
+            string school = autoSchool.Text;
+            string town = autoTown.Text;
+            string bus = string.IsNullOrWhiteSpace(autoBus.Text) ? "All Buses" : autoBus.Text;
+
+            Toast.MakeText(this, $"Finding {bus} from {town} to {school}...", ToastLength.Long).Show();
         }
 
         // --- Helper Methods (Keep the code DRY - Don't Repeat Yourself) ---

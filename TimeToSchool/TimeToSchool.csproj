@@ -60,6 +60,7 @@
     <Reference Include="System.Numerics.Vectors" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Model\BusRoute.cs" />
     <Compile Include="Service\DataService.cs" />
     <Compile Include="MainActivity.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
@@ -102,7 +103,6 @@
   <ItemGroup>
     <Folder Include="Adapters\" />
     <Folder Include="BusinessLogic\" />
-    <Folder Include="Model\" />
     <Folder Include="Resources\drawable\" />
   </ItemGroup>
   <ItemGroup>

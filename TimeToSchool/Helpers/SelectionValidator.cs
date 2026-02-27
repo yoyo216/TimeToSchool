@@ -16,8 +16,7 @@ namespace TimeToSchool
         public bool IsValid(string school, string town, string bus)
         {
             return !string.IsNullOrWhiteSpace(school) &&
-                   !string.IsNullOrWhiteSpace(town) &&
-                   !string.IsNullOrWhiteSpace(bus);
+                   !string.IsNullOrWhiteSpace(town);
         }
     }
 }
