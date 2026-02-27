@@ -12,7 +12,6 @@ namespace TimeToSchool
     public class MainActivity : AppCompatActivity
     {
         //Test with Kostya
-        //Test with Kostya 2
 
         // UI Components
         private AutoCompleteTextView autoSchool;
