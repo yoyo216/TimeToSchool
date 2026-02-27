@@ -11,6 +11,8 @@ namespace TimeToSchool
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme", MainLauncher = true)]
     public class MainActivity : AppCompatActivity
     {
+        //Test with Kostya
+
         // UI Components
         private AutoCompleteTextView autoSchool;
         private AutoCompleteTextView autoTown;
