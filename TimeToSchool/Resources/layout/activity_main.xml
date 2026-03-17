@@ -1,128 +1,174 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F9FF"
-    android:paddingTop="32dp">
+    android:background="#F5F9FF">
 
-	<TextView
-        android:id="@+id/titleText"
+    <RelativeLayout
+    android:id="@+id/headerLayout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"        
+    android:paddingTop="40dp"
+    android:paddingStart="20dp"
+    android:paddingEnd="20dp"
+    android:paddingBottom="20dp">
+
+        <ImageView
+            android:id="@+id/imgLogo"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:padding="2dp" 
+            android:src="@drawable/ic_icon_bus"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            app:tint="#1976D2" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Time to School"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="#1976D2"
+            android:layout_toEndOf="@id/imgLogo"
+            android:layout_marginStart="12dp"
+            android:layout_centerVertical="true" />
+
+        <ImageView
+            android:id="@+id/imgProfileIcon"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
+            android:src="@drawable/ic_icon_person"  
+			android:layout_toStartOf="@id/btnHeaderSignIn"
+            android:layout_marginEnd="0dp" 
+            android:layout_centerVertical="true"
+            app:tint="#1976D2" />
+
+        <Button
+            android:id="@+id/btnHeaderSignIn"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SIGN IN"
+            android:textColor="#1976D2"
+            android:paddingStart="4dp"  
+			android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true" />
+    </RelativeLayout>
+
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Time to School"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textColor="#2C5EA8"
-        android:gravity="center"
-        android:layout_marginBottom="16dp"/>
+        android:layout_height="match_parent"
+        android:layout_below="@id/headerLayout">
 
-	<LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="24dp">
+        <ImageView
+            android:id="@+id/imgBackgroundBus"
+            android:layout_width="320dp"
+            android:layout_height="320dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_backgound_bus"
+            android:alpha="0.12"
+            android:contentDescription="Background watermark" />
 
-		<TextView
-            android:text="School"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:textColor="#333333"
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="4dp" />
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:scrollbars="none">
 
-		<com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/layoutSchool"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:boxBackgroundColor="@android:color/white"
-            app:shapeAppearanceOverlay="@null">
-
-			<AutoCompleteTextView
-                android:id="@+id/autoSchool"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Search for school..."
-                android:inputType="text"
-                android:padding="16dp" 
-				android:completionThreshold="1"
-				android:dropDownHeight="wrap_content"
-                android:dropDownVerticalOffset="2dp" />
-		</com.google.android.material.textfield.TextInputLayout>
+                android:orientation="vertical"
+                android:padding="24dp">
 
-		<TextView
-            android:text="Town"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:textColor="#333333"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="4dp" />
+                <TextView
+                    android:text="School"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#333333"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="4dp" />
 
-		<com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/layoutTown"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:boxBackgroundColor="@android:color/white">
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layoutSchool"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxBackgroundColor="@android:color/white">
+                    <AutoCompleteTextView
+                        android:id="@+id/autoSchool"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Search for school..."
+                        android:inputType="text" />
+                </com.google.android.material.textfield.TextInputLayout>
 
-			<AutoCompleteTextView
-                android:id="@+id/autoTown"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Search for town..."
-                android:inputType="text"
-                android:padding="16dp" 
-				android:completionThreshold="1"
-				android:dropDownHeight="wrap_content"
-                android:dropDownVerticalOffset="2dp" />
-		</com.google.android.material.textfield.TextInputLayout>
+                <TextView
+                    android:text="Town"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#333333"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="4dp" />
 
-		<TextView
-            android:text="Bus Line"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:textColor="#333333"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="4dp" />
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layoutTown"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxBackgroundColor="@android:color/white">
+                    <AutoCompleteTextView
+                        android:id="@+id/autoTown"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Search for town..."
+                        android:inputType="text" />
+                </com.google.android.material.textfield.TextInputLayout>
 
-		<com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/layoutBus"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:boxBackgroundColor="@android:color/white">
+                <TextView
+                    android:text="Bus Line"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#333333"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="4dp" />
 
-			<AutoCompleteTextView
-                android:id="@+id/autoBus"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="(Optinal!)Search for bus line..."
-                android:inputType="text"
-                android:padding="16dp" 
-				android:completionThreshold="1"
-				android:dropDownHeight="wrap_content"
-                android:dropDownVerticalOffset="2dp" />
-		</com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layoutBus"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxBackgroundColor="@android:color/white">
+                    <AutoCompleteTextView
+                        android:id="@+id/autoBus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="(Optional!) Search for bus line..."
+                        android:inputType="text" />
+                </com.google.android.material.textfield.TextInputLayout>
 
-		<com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSignIn"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="24dp"
-            android:text="Sign In"
-            android:textSize="16sp"
-            android:textAllCaps="false"
-            app:cornerRadius="8dp"
-            android:backgroundTint="#4A90E2" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnFindBus"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:layout_marginTop="24dp"
+                    android:text="FIND MY BUS"
+                    android:textSize="16sp"
+                    android:textAllCaps="true"
+                    app:cornerRadius="8dp"
+                    android:backgroundTint="#4A90E2" />
 
-	</LinearLayout>
-</LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </FrameLayout>
+</RelativeLayout>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+android:orientation="vertical"
+android:layout_width="match_parent"
+android:layout_height="match_parent">
+
+
+	<com.google.android.material.textfield.TextInputLayout
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="50dp"
+		android:gravity="center_horizontal"
+		android:id="@+id/signup_input_first_name">
+		<EditText
+			android:layout_width="230dp"
+			android:layout_height="wrap_content"
+			android:inputType="text"
+			android:id="@+id/et_first_name"
+			android:maxLines="1"
+			android:hint="First Name"/>
+	</com.google.android.material.textfield.TextInputLayout>
+	<com.google.android.material.textfield.TextInputLayout
+		android:layout_below="@+id/signup_input_first_name"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:gravity="center_horizontal"
+		android:id="@+id/signup_input_last_name">
+		<EditText
+			android:layout_width="230dp"
+			android:layout_height="wrap_content"
+			android:inputType="text"
+			android:id="@+id/et_last_name"
+			android:maxLines="1"
+			android:hint="Last Name"/>
+	</com.google.android.material.textfield.TextInputLayout>
+	<com.google.android.material.textfield.TextInputLayout
+		android:layout_below="@+id/signup_input_last_name"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:gravity="center_horizontal"
+		android:id="@+id/signup_input_email">
+		<EditText
+			android:layout_width="230dp"
+			android:layout_height="wrap_content"
+			android:inputType="textEmailAddress"
+			android:id="@+id/et_email"
+			android:maxLines="1"
+			android:hint="Email"/>
+	</com.google.android.material.textfield.TextInputLayout>
+	<com.google.android.material.textfield.TextInputLayout
+		android:layout_below="@+id/signup_input_email"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:gravity="center_horizontal"
+		android:id="@+id/signup_input_password">
+		<EditText
+			android:layout_width="230dp"
+			android:layout_height="wrap_content"
+			android:inputType="textPassword"
+			android:id="@+id/et_password"
+			android:maxLines="1"
+			android:hint="Password"
+    />
+	</com.google.android.material.textfield.TextInputLayout>
+	<com.google.android.material.textfield.TextInputLayout
+		android:layout_below="@+id/signup_input_password"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:gravity="center_horizontal"
+		android:id="@+id/signup_input_mobile">
+		<EditText
+			android:layout_width="230dp"
+			android:layout_height="wrap_content"
+			android:inputType="number"
+			android:id="@+id/et_mobile"
+			android:maxLines="1"
+			android:hint="Mobile"/>
+	</com.google.android.material.textfield.TextInputLayout>
+	<Button
+		android:layout_below="@+id/signup_input_mobile"
+		android:layout_marginTop="20dp"
+		android:layout_marginLeft="80dp"
+		android:layout_marginRight="80dp"
+		android:layout_width="230dp"
+		android:layout_height="50dp"
+		android:textSize="15dp"
+		android:background="#3495eb"
+		android:text="Sign Up"
+		android:id="@+id/btn_register"/>
+
+
+</RelativeLayout>

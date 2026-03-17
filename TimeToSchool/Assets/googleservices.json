@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "647415682831",
+    "project_id": "timetoschool-2030c",
+    "storage_bucket": "timetoschool-2030c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:647415682831:android:eead8961ac275ef6d4507a",
+        "android_client_info": {
+          "package_name": "com.companyname.timetoschool"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCsLZ5LqKeL6VyIUrTiZI8ouXzpr4Ewd6Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

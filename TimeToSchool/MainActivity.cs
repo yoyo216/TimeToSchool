@@ -6,20 +6,25 @@ using Android.Widget;
 using AndroidX.AppCompat.App;
 using Google.Android.Material.TextField;
 using System;
+using System.Linq;
+
 namespace TimeToSchool
 {
-    [Activity(Label = "@string/app_name", Theme = "@style/AppTheme", MainLauncher = true)]
+    [Activity(Label = "Time To School",
+              MainLauncher = true,
+              WindowSoftInputMode = SoftInput.AdjustResize | SoftInput.StateHidden)]
     public class MainActivity : AppCompatActivity
     {
-        //Test with Kostya
-
         // UI Components
         private AutoCompleteTextView autoSchool;
         private AutoCompleteTextView autoTown;
         private AutoCompleteTextView autoBus;
-        private Button btnSignIn;
 
-        // Logic & Data Dependencies (SOLID: Separation of Concerns)
+        // Buttons
+        private Button btnFindBus;
+        private Button btnHeaderSignIn;
+
+        // Logic & Data Dependencies
         private readonly IDataRepository _repository = new LocalDataRepository();
         private readonly SelectionValidator _validator = new SelectionValidator();
 
@@ -29,7 +34,6 @@ namespace TimeToSchool
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             SetContentView(Resource.Layout.activity_main);
 
-            // High-level organization
             InitViews();
             SetupAdapters();
             SetupDropdownBehavior();
@@ -44,7 +48,9 @@ namespace TimeToSchool
             autoSchool = FindViewById<AutoCompleteTextView>(Resource.Id.autoSchool);
             autoTown = FindViewById<AutoCompleteTextView>(Resource.Id.autoTown);
             autoBus = FindViewById<AutoCompleteTextView>(Resource.Id.autoBus);
-            btnSignIn = FindViewById<Button>(Resource.Id.btnSignIn);
+
+            btnHeaderSignIn = FindViewById<Button>(Resource.Id.btnHeaderSignIn);
+            btnFindBus = FindViewById<Button>(Resource.Id.btnFindBus);
 
             // Start with Town and Bus disabled
             SetFieldEnabled(autoTown, false);
@@ -53,11 +59,7 @@ namespace TimeToSchool
 
         private void SetupAdapters()
         {
-            // We only load Schools at the start. 
-            // Towns and Buses are empty because we don't know the school yet!
             autoSchool.Adapter = CreateAdapter(_repository.GetSchools().ToArray());
-
-            // Set empty adapters for the others so they don't crash
             autoTown.Adapter = CreateAdapter(new string[] { });
             autoBus.Adapter = CreateAdapter(new string[] { });
         }
@@ -68,19 +70,19 @@ namespace TimeToSchool
             ConfigureSearchableField(autoTown);
             ConfigureSearchableField(autoBus);
         }
+
         private void SetFieldEnabled(AutoCompleteTextView view, bool isEnabled)
         {
             view.Enabled = isEnabled;
-            // Dim the view to 50% opacity if disabled, 100% if enabled
             view.Alpha = isEnabled ? 1.0f : 0.5f;
 
-            // Also disable the parent TextInputLayout to dim the outline/label
             var parent = view.Parent.Parent as TextInputLayout;
             if (parent != null)
             {
                 parent.Enabled = isEnabled;
             }
         }
+
         private void SetupEvents()
         {
             // Selection Events
@@ -88,67 +90,78 @@ namespace TimeToSchool
             autoTown.ItemClick += OnTownSelected;
             autoBus.ItemClick += (s, e) => HideKeyboard();
 
-            // Validation Events
+            // Validation Events (Triggers button color change)
             autoSchool.TextChanged += (s, e) => ValidateFields();
             autoTown.TextChanged += (s, e) => ValidateFields();
             autoBus.TextChanged += (s, e) => ValidateFields();
 
             // Action Events
-            btnSignIn.Click += (s, e) => OnSignInClicked();
+            btnFindBus.Click += (s, e) => OnFindBusClicked();
+            btnHeaderSignIn.Click += (s, e) => OnSginInClicked();
+
+
         }
+
+
         private void OnSchoolSelected(object sender, AdapterView.ItemClickEventArgs e)
         {
             string selectedSchool = autoSchool.Text;
-
-            // Reset and Update UI State
             autoTown.Text = string.Empty;
             autoBus.Text = string.Empty;
+
             SetFieldEnabled(autoTown, true);
             SetFieldEnabled(autoBus, false);
 
-            // Update Data
             var filteredTowns = _repository.GetTownsForSchool(selectedSchool);
             autoTown.Adapter = CreateAdapter(filteredTowns.ToArray());
 
             HideKeyboard();
         }
+
         private void OnTownSelected(object sender, AdapterView.ItemClickEventArgs e)
         {
             string selectedSchool = autoSchool.Text;
             string selectedTown = autoTown.Text;
 
-            // Reset and Update UI State
             autoBus.Text = string.Empty;
             SetFieldEnabled(autoBus, true);
 
-            // Update Data
             var filteredBuses = _repository.GetBusesForRoute(selectedSchool, selectedTown);
             autoBus.Adapter = CreateAdapter(filteredBuses.ToArray());
 
             HideKeyboard();
         }
+
         private void ValidateFields()
         {
-            // Delegates logic to the Validator class
+            // Logic: Is the form ready to search?
             bool isReady = _validator.IsValid(autoSchool.Text, autoTown.Text, autoBus.Text);
 
-            btnSignIn.Enabled = isReady;
-            btnSignIn.SetBackgroundColor(isReady ? Color.ParseColor("#4A90E2") : Color.Gray);
+            btnFindBus.Enabled = isReady;
+            // High-contrast blue if ready, grey if not
+            btnFindBus.SetBackgroundColor(isReady ? Color.ParseColor("#4A90E2") : Color.LightGray);
+            btnFindBus.Alpha = isReady ? 1.0f : 0.6f;
         }
 
-        private void OnSignInClicked()
+        private void OnFindBusClicked()
         {
             string school = autoSchool.Text;
             string town = autoTown.Text;
             string bus = string.IsNullOrWhiteSpace(autoBus.Text) ? "All Buses" : autoBus.Text;
 
-            Toast.MakeText(this, $"Finding {bus} from {town} to {school}...", ToastLength.Long).Show();
+            Toast.MakeText(this, $"Searching for {bus} from {town} to {school}...", ToastLength.Long).Show();
+        }
+        private void OnSginInClicked()
+        {
+            Toast.MakeText(this, "Navigating to Sign In...", ToastLength.Short).Show();
+            StartActivity(typeof(SignInActivity));
         }
 
-        // --- Helper Methods (Keep the code DRY - Don't Repeat Yourself) ---
+        // --- Helper Methods ---
 
         private ArrayAdapter<string> CreateAdapter(string[] data)
         {
+            // Note: Ensure 'dropdown_item.xml' exists in Resources/layout
             return new ArrayAdapter<string>(this, Resource.Layout.dropdown_item, data);
         }
 
