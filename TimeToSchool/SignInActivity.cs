@@ -1,5 +1,6 @@
 ﻿using Android.App;
 using Android.Content;
+using Android.Graphics;
 using Android.OS;
 using Android.Runtime;
 using Android.Util;
@@ -49,6 +50,7 @@ namespace TimeToSchool
             //    ShowProgressBar(true);
             //    SignInWithEmailAndPassword();
             //}
+
         }
         private async void SignInWithEmailAndPassword()
         {
@@ -103,7 +105,17 @@ namespace TimeToSchool
             {
                 StartActivity(typeof(SignUpActivity));
             }
+            else if (v.Id == Resource.Id.rootScrollView)
+            {
+                var inputMethodManager = (Android.Views.InputMethods.InputMethodManager)GetSystemService(InputMethodService);
+                if (inputMethodManager != null && CurrentFocus != null)
+                {
+                    inputMethodManager.HideSoftInputFromWindow(CurrentFocus.WindowToken, 0);
+                    CurrentFocus.ClearFocus();
+                }
+            }
         }
+        
         private void ShowProgressBar(bool show)
         {
             //android:background="@android:color/transparent"
@@ -124,8 +136,33 @@ namespace TimeToSchool
                 mProgressDialog.Dismiss();
             }
         }
-        private bool Validate()
+        public override bool DispatchTouchEvent(MotionEvent ev)
+        {// hiding keyboard when user clicks outside of EditText
+            if (ev.Action == MotionEventActions.Down)
+            {
+                View v = CurrentFocus;
+                if (v is EditText)
+                {
+                    Rect outRect = new Rect();
+                    v.GetGlobalVisibleRect(outRect);
+                    if (!outRect.Contains((int)ev.RawX, (int)ev.RawY))
+                        HideKeyboard();
+                }
+            }
+            return base.DispatchTouchEvent(ev);
+        }
+
+        private void HideKeyboard()
         {
+            var imm = (Android.Views.InputMethods.InputMethodManager)GetSystemService(InputMethodService);
+            if (CurrentFocus != null)
+            {
+                imm.HideSoftInputFromWindow(CurrentFocus.WindowToken, 0);
+                CurrentFocus.ClearFocus();
+            }
+        }
+        private bool Validate()
+        {// Basic validation for email and password fields
 
             return true;
         }
