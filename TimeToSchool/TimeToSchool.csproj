@@ -66,6 +66,7 @@
   <ItemGroup>
     <Compile Include="BusinessLogic\ProManager.cs" />
     <Compile Include="DriverActivity.cs" />
+    <Compile Include="Model\ActiveBus.cs" />
     <Compile Include="Model\BusRoute.cs" />
     <Compile Include="Model\User.cs" />
     <Compile Include="Service\DataService.cs" />

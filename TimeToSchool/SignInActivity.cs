@@ -43,13 +43,13 @@ namespace TimeToSchool
             btnSighUp.SetOnClickListener(this);
 
             //Debug Mode
-            //if (ProManager.DebugMode)
-            //{
-            //    etEmail.Text = "yoav@gmail.com";
-            //    etPass.Text = "123456";
-            //    ShowProgressBar(true);
-            //    SignInWithEmailAndPassword();
-            //}
+            if (ProManager.DebugMode)
+            {
+                etEmail.Text = "yoav@gmail.com";
+                etPass.Text = "123456";
+                ShowProgressBar(true);
+                SignInWithEmailAndPassword();
+            }
 
         }
         private async void SignInWithEmailAndPassword()

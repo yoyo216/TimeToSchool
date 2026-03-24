@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using TimeToSchool.BusinessLogic;
+using TimeToSchool.Model;
 
 namespace TimeToSchool.Service
 {
@@ -326,24 +327,15 @@ namespace TimeToSchool.Service
         #endregion
 
         #region bus location
-        public static async Task UpdateBusLocation(string busId, double lat, double lng)
+        public static async Task UpdateBusLocation(ActiveBus trip)
         {
             try
             {
-                var docRef = FirebaseFirestore.Instance.Collection("BusLocations").Document(busId);
-
-                // This is the object that Firestore recognizes as a 'geopoint'
-                GeoPoint busLocation = new GeoPoint(lat, lng);
-
-                var data = new JavaDictionary<string, object>
-        {
-            // Use the object here, not the individual doubles!
-            { "location", busLocation },
-            { "timestamp", FieldValue.ServerTimestamp() }
-        };
-
-                // In Xamarin, you often need .AsAsync() to properly await Java tasks
-                await docRef.Set(data).AsAsync();
+                var db = FirebaseFirestore.Instance;
+                await db.Collection("ActiveTrips")
+                        .Document(trip.GetDocId())
+                        .Set(trip.ToMap())
+                        .AsAsync();
             }
             catch (Exception ex)
             {
