@@ -65,6 +65,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BusinessLogic\ProManager.cs" />
+    <Compile Include="DriverActivity.cs" />
     <Compile Include="Model\BusRoute.cs" />
     <Compile Include="Model\User.cs" />
     <Compile Include="Service\DataService.cs" />
@@ -156,6 +157,11 @@
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\layout\signup_layout.xml">
+      <SubType>Designer</SubType>
+    </AndroidResource>
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\layout\driverpage_layout.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
   </ItemGroup>

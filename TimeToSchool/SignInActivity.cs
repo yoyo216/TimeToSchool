@@ -79,7 +79,7 @@ namespace TimeToSchool
                 //Set Current User 
                 ShowProgressBar(false);
                 ProManager.CurrentUser = userfromDB;
-                //StartActivity(typeof(MainPage));
+                StartActivity(typeof(DriverActivity));
             }
             else
             {
@@ -105,15 +105,7 @@ namespace TimeToSchool
             {
                 StartActivity(typeof(SignUpActivity));
             }
-            else if (v.Id == Resource.Id.rootScrollView)
-            {
-                var inputMethodManager = (Android.Views.InputMethods.InputMethodManager)GetSystemService(InputMethodService);
-                if (inputMethodManager != null && CurrentFocus != null)
-                {
-                    inputMethodManager.HideSoftInputFromWindow(CurrentFocus.WindowToken, 0);
-                    CurrentFocus.ClearFocus();
-                }
-            }
+
         }
         
         private void ShowProgressBar(bool show)

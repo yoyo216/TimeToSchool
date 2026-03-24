@@ -1,9 +1,8 @@
 ﻿using Android.App;
 using Android.Content.Res;
-
 using Android.Gms.Extensions;
+using Android.Runtime;
 using Android.Util;
-using TimeToSchool.BusinessLogic;
 using Firebase;
 using Firebase.Auth;
 using Firebase.Firestore;
@@ -13,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using TimeToSchool.BusinessLogic;
 
 namespace TimeToSchool.Service
 {
@@ -325,7 +325,31 @@ namespace TimeToSchool.Service
         }
         #endregion
 
-        #region App Data
+        #region bus location
+        public static async Task UpdateBusLocation(string busId, double lat, double lng)
+        {
+            try
+            {
+                var docRef = FirebaseFirestore.Instance.Collection("BusLocations").Document(busId);
+
+                // This is the object that Firestore recognizes as a 'geopoint'
+                GeoPoint busLocation = new GeoPoint(lat, lng);
+
+                var data = new JavaDictionary<string, object>
+        {
+            // Use the object here, not the individual doubles!
+            { "location", busLocation },
+            { "timestamp", FieldValue.ServerTimestamp() }
+        };
+
+                // In Xamarin, you often need .AsAsync() to properly await Java tasks
+                await docRef.Set(data).AsAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Firestore Error: " + ex.Message);
+            }
+        }
 
         #endregion
     }

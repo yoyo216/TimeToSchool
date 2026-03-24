@@ -3,7 +3,6 @@ using Android.Content;
 using Android.Graphics;
 using Android.OS;
 using Android.Views;
-using Android.Views.InputMethods; // Required for keyboard control
 using Android.Widget;
 using System;
 using TimeToSchool.BusinessLogic;
@@ -36,12 +35,7 @@ namespace TimeToSchool
             _userMobile = FindViewById<EditText>(Resource.Id.et_mobile);
             _btnSignUp = FindViewById<Button>(Resource.Id.btn_register);
 
-            // 1. Find the ScrollView root and set its click event
-            var root = FindViewById<ScrollView>(Resource.Id.rootScrollView);
-            if (root != null)
-            {
-                root.Click += (s, e) => HideKeyboard();
-            }
+
 
             _btnSignUp.Click += BtnSignUp_Click;
         }
