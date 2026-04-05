@@ -64,6 +64,8 @@
     <Reference Include="System.Numerics.Vectors" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Adapter\UsersRViewAdapter.cs" />
+    <Compile Include="Adapter\UserViewHolder.cs.cs" />
     <Compile Include="BusinessLogic\ProManager.cs" />
     <Compile Include="DriverActivity.cs" />
     <Compile Include="Model\ActiveBus.cs" />
@@ -77,6 +79,7 @@
     <Compile Include="Service\FireBaseHelper.cs" />
     <Compile Include="SignInActivity.cs" />
     <Compile Include="SignUpActivity.cs" />
+    <Compile Include="UserManagemetnActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\googleservices.json" />
@@ -111,9 +114,7 @@
     <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher_foreground.png" />
     <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher_round.png" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Adapters\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.4</Version>
@@ -163,6 +164,16 @@
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\layout\driverpage_layout.xml">
+      <SubType>Designer</SubType>
+    </AndroidResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\drawable\ic_femaleicon.png" />
+    <AndroidResource Include="Resources\drawable\ic_maleicon.png" />
+    <AndroidResource Include="Resources\layout\usercard_item.xml">
+      <SubType>Designer</SubType>
+    </AndroidResource>
+    <AndroidResource Include="Resources\layout\usermanagement_layout.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
   </ItemGroup>
