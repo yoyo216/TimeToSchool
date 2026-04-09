@@ -66,8 +66,12 @@
   <ItemGroup>
     <Compile Include="Adapter\UsersRViewAdapter.cs" />
     <Compile Include="Adapter\UserViewHolder.cs.cs" />
+    <Compile Include="AdminMainActivity.cs" />
     <Compile Include="BusinessLogic\ProManager.cs" />
     <Compile Include="DriverActivity.cs" />
+    <Compile Include="Fragments\BusesManagementFragment.cs" />
+    <Compile Include="Fragments\CreateBusDialogFragment.cs" />
+    <Compile Include="Fragments\UsersManagementFragment.cs" />
     <Compile Include="Model\ActiveBus.cs" />
     <Compile Include="Model\BusRoute.cs" />
     <Compile Include="Model\User.cs" />
@@ -79,7 +83,6 @@
     <Compile Include="Service\FireBaseHelper.cs" />
     <Compile Include="SignInActivity.cs" />
     <Compile Include="SignUpActivity.cs" />
-    <Compile Include="UserManagemetnActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\googleservices.json" />
@@ -173,7 +176,16 @@
     <AndroidResource Include="Resources\layout\usercard_item.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
-    <AndroidResource Include="Resources\layout\usermanagement_layout.xml">
+    <AndroidResource Include="Resources\layout\fragment_users_management.xml">
+      <SubType>Designer</SubType>
+    </AndroidResource>
+    <AndroidResource Include="Resources\layout\adminpage_layout.xml">
+      <SubType>Designer</SubType>
+    </AndroidResource>
+    <AndroidResource Include="Resources\layout\fragment_buses_management.xml">
+      <SubType>Designer</SubType>
+    </AndroidResource>
+    <AndroidResource Include="Resources\layout\createbusline_layout.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
   </ItemGroup>

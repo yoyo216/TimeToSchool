@@ -126,7 +126,7 @@ namespace TimeToSchool
                 currentTrip.Status = "Active";
 
                 // Interval: 15 seconds (15000ms), Distance: 2 meters
-                locManager.RequestLocationUpdates(LocationManager.GpsProvider, 15000, 2, this);
+                locManager.RequestLocationUpdates(LocationManager.NetworkProvider, 15000, 2, this);
 
                 // Update Firebase immediately so students see the bus go "Online"
                 await FireBaseHelper.UpdateBusLocation(currentTrip);

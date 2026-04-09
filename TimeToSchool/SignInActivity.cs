@@ -79,7 +79,7 @@ namespace TimeToSchool
                 //Set Current User 
                 ShowProgressBar(false);
                 ProManager.CurrentUser = userfromDB;
-                StartActivity(typeof(UserManagemetnActivity));
+                StartActivity(typeof(AdminMainActivity));
             }
             else
             {

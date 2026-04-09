@@ -13,6 +13,7 @@ namespace TimeToSchool.Model
 {
     public class BusRoute
     {
+        public string Id { get; set; }
         public string School { get; set; }
         public string Town { get; set; }
         public string BusLine { get; set; }

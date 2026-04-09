@@ -327,6 +327,25 @@ namespace TimeToSchool.Service
         #endregion
 
         #region bus location
+        public static async Task AddBusRoute(BusRoute route)
+        {
+            try
+            {
+                FirebaseFirestore db = FirebaseFirestore.Instance;
+
+                HashMap routeMap = new HashMap();
+                routeMap.Put("School", route.School);
+                routeMap.Put("Town", route.Town);
+                routeMap.Put("BusLine", route.BusLine);
+
+                // This creates the "BusRoutes" collection automatically
+                await db.Collection("BusRoutes").Add(routeMap);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error saving bus route: " + ex.Message);
+            }
+        }
         public static async Task UpdateBusLocation(ActiveBus trip)
         {
             try
