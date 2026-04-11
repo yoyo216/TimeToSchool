@@ -1,22 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
-	<androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvBuses"
+	<com.google.android.material.tabs.TabLayout
+        android:id="@+id/busTabLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#2196F3"
+        app:tabTextColor="#CCFFFFFF"
+        app:tabSelectedTextColor="@android:color/white"
+        app:tabIndicatorColor="@android:color/white"
+        app:tabIndicatorHeight="3dp"/>
+
+	<androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/busViewPager"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-	<com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabAddBus"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="24dp"
-        app:srcCompat="@android:drawable/ic_input_add"
-        app:backgroundTint="#2196F3"
-        android:contentDescription="Add Bus Line" />
-
-</FrameLayout>
+</LinearLayout>

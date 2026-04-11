@@ -64,11 +64,15 @@
     <Reference Include="System.Numerics.Vectors" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Adapter\BusPagerAdapter.cs" />
+    <Compile Include="Adapter\BusRViewAdapter.cs" />
     <Compile Include="Adapter\UsersRViewAdapter.cs" />
     <Compile Include="Adapter\UserViewHolder.cs.cs" />
     <Compile Include="AdminMainActivity.cs" />
     <Compile Include="BusinessLogic\ProManager.cs" />
     <Compile Include="DriverActivity.cs" />
+    <Compile Include="Fragments\ActiveBusesFragment.cs" />
+    <Compile Include="Fragments\AllBusesFragment.cs" />
     <Compile Include="Fragments\BusesManagementFragment.cs" />
     <Compile Include="Fragments\CreateBusDialogFragment.cs" />
     <Compile Include="Fragments\UsersManagementFragment.cs" />
@@ -186,6 +190,12 @@
       <SubType>Designer</SubType>
     </AndroidResource>
     <AndroidResource Include="Resources\layout\createbusline_layout.xml">
+      <SubType>Designer</SubType>
+    </AndroidResource>
+    <AndroidResource Include="Resources\layout\fragment_all_buses.xml">
+      <SubType>Designer</SubType>
+    </AndroidResource>
+    <AndroidResource Include="Resources\layout\bus_item_card.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
   </ItemGroup>

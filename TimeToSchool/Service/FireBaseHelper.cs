@@ -327,6 +327,26 @@ namespace TimeToSchool.Service
         #endregion
 
         #region bus location
+        // Registration objects for the bus-specific listeners
+        public static IListenerRegistration BusRegistration;
+        public static FirestoreEventListener BusEventListener;
+
+        // Starts a real-time listener for the BusRoutes collection
+        public static void FetchBusesListener()
+        {
+            BusEventListener = new FirestoreEventListener();
+            BusRegistration = FirebaseFirestore.Instance
+                .Collection("BusRoutes")
+                .AddSnapshotListener(BusEventListener);
+        }
+
+        // Stops the bus listener to save resources
+        public static void StopBusesListener()
+        {
+            BusRegistration?.Remove();
+            BusRegistration = null;
+            BusEventListener = null;
+        }
         public static async Task AddBusRoute(BusRoute route)
         {
             try

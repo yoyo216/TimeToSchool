@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="6dp">
+
+	<LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="?android:attr/selectableItemBackground">
+
+		<RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+			<TextView
+                android:id="@+id/tvBusLineName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Line 102"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="#1976D2" />
+
+			<ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:src="@android:drawable/ic_menu_directions"
+                app:tint="#757575" />
+		</RelativeLayout>
+
+		<TextView
+            android:id="@+id/tvSchoolName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Washington High School"
+            android:textSize="16sp"
+            android:textColor="#212121" />
+
+		<LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp"
+            android:gravity="center_vertical">
+
+			<ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@android:drawable/ic_menu_mylocation"
+                app:tint="#9E9E9E" />
+
+			<TextView
+                android:id="@+id/tvTownName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="4dp"
+                android:text="Netanya"
+                android:textSize="14sp"
+                android:textColor="#757575" />
+		</LinearLayout>
+
+	</LinearLayout>
+</androidx.cardview.widget.CardView>

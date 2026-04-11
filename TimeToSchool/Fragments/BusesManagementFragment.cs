@@ -5,40 +5,62 @@ using Android.Runtime;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
+using AndroidX.Fragment.App;
 using AndroidX.RecyclerView.Widget;
+using AndroidX.ViewPager2.Widget;
 using Firebase.Firestore;
+using Google.Android.Material.FloatingActionButton;
+using Google.Android.Material.Tabs;
 using System;
 using System.Collections.Generic;
 using TimeToSchool.Adapter;
 using TimeToSchool.BusinessLogic;
 using TimeToSchool.Model;
 using TimeToSchool.Service;
-using AndroidX.Fragment.App;
-using Google.Android.Material.FloatingActionButton;
 namespace TimeToSchool.Fragments
 {
     public class BusesManagementFragment : AndroidX.Fragment.App.Fragment
     {
-        FloatingActionButton fabAddBus;
+        private ViewPager2 _viewPager;
+        private TabLayout _tabLayout;
+        private BusPagerAdapter _pagerAdapter;
 
         public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            // Inflate the layout for this fragment
-            View view = inflater.Inflate(Resource.Layout.fragment_buses_management, container, false);
+            return inflater.Inflate(Resource.Layout.fragment_buses_management, container, false);
+        }
 
-            // Initialize the FAB
-            fabAddBus = view.FindViewById<FloatingActionButton>(Resource.Id.fabAddBus);
+        public override void OnViewCreated(View view, Bundle savedInstanceState)
+        {
+            base.OnViewCreated(view, savedInstanceState);
+            InitViews(view);
+            SetupViewPager();
+        }
 
-            // Click event to open your DialogFragment
-            fabAddBus.Click += (s, e) =>
-            {
-                CreateBusDialogFragment dialog = new CreateBusDialogFragment();
-                // Show the dialog over the current fragment
-                dialog.Show(ParentFragmentManager, "CreateBusDialog");
-            };
+        // SOLID: Single Responsibility - Only handles View Finding
+        private void InitViews(View view)
+        {
+            _viewPager = view.FindViewById<ViewPager2>(Resource.Id.busViewPager);
+            _tabLayout = view.FindViewById<TabLayout>(Resource.Id.busTabLayout);
+        }
 
-            return view;
+        // SOLID: Single Responsibility - Only handles Pager Setup
+        private void SetupViewPager()
+        {
+            _pagerAdapter = new BusPagerAdapter(this);
+            _viewPager.Adapter = _pagerAdapter;
+
+            // Using the TabMediator to connect them
+            new TabLayoutMediator(_tabLayout, _viewPager, new BusTabConfiguration()).Attach();
         }
     }
 
+    // SOLID: Single Responsibility - This class ONLY cares about Tab Titles
+    public class BusTabConfiguration : Java.Lang.Object, TabLayoutMediator.ITabConfigurationStrategy
+    {
+        public void OnConfigureTab(TabLayout.Tab tab, int position)
+        {
+            tab.SetText(position == 0 ? "All Routes" : "Live Trips");
+        }
+    }
 }
