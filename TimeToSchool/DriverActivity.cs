@@ -4,8 +4,12 @@ using Android.Content.PM;
 using Android.Locations;
 using Android.OS;
 using Android.Util;
+using Android.Views;
 using Android.Widget;
+using Google.Android.Material.TextField;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using TimeToSchool.BusinessLogic;
 using TimeToSchool.Model;
@@ -20,54 +24,42 @@ namespace TimeToSchool
         private const int REQUEST_LOCATION_ID = 1001;
 
         // UI Components
-        private Button btnStart, btnStop;
-        private TextView statusText;
+        private LinearLayout cardsContainer;
+        private ImageButton btnAddRoute;
+        private TextView globalStatusText;
 
-        // Services & Data Model
+        // Data & Services
         private LocationManager locManager;
-        private ActiveBus currentTrip;
+        private List<DriverCardState> _driverCards = new List<DriverCardState>();
+        private List<BusRoute> _allRoutes;
+        private bool _isGlobalDriving = false;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
             SetContentView(Resource.Layout.driverpage_layout);
 
-            // SOLID: Single Responsibility - Each method does one setup task
             InitViews();
-            LoadTripData();
             SetupServices();
-
-            // Check permissions immediately on startup to avoid late-game crashes
             CheckAndRequestLocationPermission();
+            LoadInitialData();
         }
-
-        #region Initialization (SOLID: Setup Responsibility)
 
         private void InitViews()
         {
-            btnStart = FindViewById<Button>(Resource.Id.btnStartDrive);
-            btnStop = FindViewById<Button>(Resource.Id.btnStopDrive);
-            statusText = FindViewById<TextView>(Resource.Id.statusText);
+            cardsContainer = FindViewById<LinearLayout>(Resource.Id.cardsContainer);
+            btnAddRoute = FindViewById<ImageButton>(Resource.Id.btnAddRoute);
+            globalStatusText = FindViewById<TextView>(Resource.Id.globalStatusText);
 
-            btnStart.Click += OnStartDriveClicked;
-            btnStop.Click += OnStopDriveClicked;
-
-            // Initial State
-            btnStop.Enabled = false;
-        }
-
-        private void LoadTripData()
-        {
-            // Pulling data from the Intent (passed from Login/Selection screen)
-            currentTrip = new ActiveBus()
+            btnAddRoute.Click += (s, e) =>
             {
-                SchoolName = Intent.GetStringExtra("School") ?? "Unknown School",
-                Town = Intent.GetStringExtra("Town") ?? "Unknown Town",
-                BusLine = Intent.GetStringExtra("Line") ?? "000",
-                DriverName = ProManager.CurrentUser.FirstName,
-                DriverId = ProManager.CurrentUser.Id,
-                Date = DateTime.Now.ToString("yyyy-MM-dd"),
-                Status = "Inactive"
+                if (_isGlobalDriving)
+                {
+                    Toast.MakeText(this, "לא ניתן להוסיף מסלול בזמן נסיעה", ToastLength.Short).Show();
+                    return;
+                }
+                _driverCards.Add(new DriverCardState { TripData = new ActiveBus() });
+                RenderCards();
             };
         }
 
@@ -76,116 +68,281 @@ namespace TimeToSchool
             locManager = (LocationManager)GetSystemService(LocationService);
         }
 
+        private async void LoadInitialData()
+        {
+            // Fetch the static database of buses for the dialogs
+            _allRoutes = await BusesRepository.GetBusesCollection();
+
+            // Start with one empty card if none exist
+            if (_driverCards.Count == 0)
+                _driverCards.Add(new DriverCardState { TripData = new ActiveBus() });
+
+            RenderCards();
+        }
+
+        #region UI Rendering Engine
+
+        private void RenderCards()
+        {
+            cardsContainer.RemoveAllViews();
+
+            foreach (var state in _driverCards)
+            {
+                // 1. Inflate the custom card item
+                View cardView = LayoutInflater.From(this).Inflate(Resource.Layout.driver_route_item, null);
+
+                // 2. Find Views
+                var tvSchool = cardView.FindViewById<TextView>(Resource.Id.tvSchoolName);
+                var tvStatus = cardView.FindViewById<TextView>(Resource.Id.tvStatusLabel);
+                var btnAction = cardView.FindViewById<LinearLayout>(Resource.Id.btnTripAction);
+                var btnSettings = cardView.FindViewById<ImageButton>(Resource.Id.btnSettings);
+
+                // 3. Set Text (Using BusLine name as requested)
+                tvSchool.Text = !string.IsNullOrEmpty(state.TripData.SchoolName)
+                                ? $"{state.TripData.SchoolName} - קו {state.TripData.BusLine}"
+                                : "לחץ על ההגדרות לבחירת מסלול";
+
+                // 4. Apply Visual States (Red/Green/Grey)
+                ApplyVisualState(state, btnAction, tvStatus, btnSettings);
+
+                // 5. Events
+                btnAction.Click += (s, e) => ToggleTrip(state);
+                btnSettings.Click += (s, e) => OpenRouteSelectionDialog(state);
+
+                cardsContainer.AddView(cardView);
+            }
+
+            globalStatusText.Text = _isGlobalDriving ? "נסיעה פעילה" : "מוכן לנסיעה";
+        }
+
+        private void ApplyVisualState(DriverCardState state, View btnAction, TextView tvStatus, View btnSettings)
+        {
+            if (state.IsDriving)
+            {
+                btnAction.SetBackgroundColor(Android.Graphics.Color.Red);
+                tvStatus.Text = "סיום נסיעה";
+                btnSettings.Visibility = ViewStates.Gone;
+            }
+            else if (_isGlobalDriving)
+            {
+                btnAction.SetBackgroundColor(Android.Graphics.Color.Gray);
+                btnAction.Enabled = false;
+                btnAction.Alpha = 0.5f;
+                tvStatus.Text = "ממתין...";
+                btnSettings.Enabled = false;
+            }
+            else
+            {
+                btnAction.SetBackgroundColor(Android.Graphics.Color.ParseColor("#4CAF50")); // Material Green
+                tvStatus.Text = "התחל נסיעה";
+                btnAction.Enabled = true;
+                btnAction.Alpha = 1.0f;
+                btnSettings.Visibility = ViewStates.Visible;
+            }
+        }
+
         #endregion
 
-        #region Permissions (SOLID: Security Responsibility)
+        #region Business Logic (Toggle & Dialog)
+
+        private async void ToggleTrip(DriverCardState state)
+        {
+            if (state.IsDriving)
+            {
+                // --- STOP LOGIC ---
+                state.IsDriving = false;
+                _isGlobalDriving = false;
+                locManager.RemoveUpdates(this);
+
+                state.TripData.Status = "Inactive";
+                await BusesRepository.UpdateBusLocation(state.TripData);
+            }
+            else
+            {
+                // --- START LOGIC ---
+                if (string.IsNullOrEmpty(state.TripData.BusLine))
+                {
+                    Toast.MakeText(this, "אנא הגדר מסלול תחילה", ToastLength.Short).Show();
+                    return;
+                }
+
+                state.IsDriving = true;
+                _isGlobalDriving = true;
+
+                state.TripData.Status = "Active";
+                state.TripData.DriverName = ProManager.CurrentUser.FirstName;
+                state.TripData.DriverId = ProManager.CurrentUser.Id;
+                state.TripData.Date = DateTime.Now.ToString("yyyy-MM-dd");
+
+                // Request Updates (15s, 2m as per original logic)
+                locManager.RequestLocationUpdates(LocationManager.NetworkProvider, 15000, 2, this);
+
+                // Create document and save ID
+                await BusesRepository.UpdateBusLocation(state.TripData);
+            }
+            RenderCards();
+        }
+        private ArrayAdapter<string> CreateAdapter(string[] data)
+        {
+            // Note: Ensure 'dropdown_item.xml' exists in Resources/layout
+            return new ArrayAdapter<string>(this, Resource.Layout.dropdown_item, data);
+        }
+        private void OpenRouteSelectionDialog(DriverCardState state)
+        {
+            Dialog dialog = new Dialog(this);
+            dialog.SetContentView(Resource.Layout.dialog_route_selector);
+            dialog.Window.SetLayout(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
+
+            // --- 1. Init Views (from dialog layout) ---
+            var autoSchool = dialog.FindViewById<AutoCompleteTextView>(Resource.Id.dialogAutoSchool);
+            var autoTown = dialog.FindViewById<AutoCompleteTextView>(Resource.Id.dialogAutoTown);
+            var autoBus = dialog.FindViewById<AutoCompleteTextView>(Resource.Id.dialogAutoBus);
+            var btnSave = dialog.FindViewById<Button>(Resource.Id.btnSaveRoute);
+
+            // --- 2. Setup Initial Dropdown Behavior ---
+            ConfigureSearchableField(autoSchool);
+            ConfigureSearchableField(autoTown);
+            ConfigureSearchableField(autoBus);
+
+            // Initial state: Only School is ready
+            autoSchool.Adapter = CreateAdapter(GetSchools(_allRoutes).ToArray());
+            SetDialogFieldEnabled(autoTown, false);
+            SetDialogFieldEnabled(autoBus, false);
+
+            // --- 3. Selection Events (Cascading Logic from MainActivity) ---
+
+            autoSchool.ItemClick += (s, e) =>
+            {
+                string selectedSchool = autoSchool.Text;
+                autoTown.Text = string.Empty;
+                autoBus.Text = string.Empty;
+
+                SetDialogFieldEnabled(autoTown, true);
+                SetDialogFieldEnabled(autoBus, false);
+
+                var filteredTowns = GetTownsForSchool(_allRoutes, selectedSchool);
+                autoTown.Adapter = CreateAdapter(filteredTowns.ToArray());
+                autoTown.ShowDropDown();
+            };
+
+            autoTown.ItemClick += (s, e) =>
+            {
+                string selectedSchool = autoSchool.Text;
+                string selectedTown = autoTown.Text;
+
+                autoBus.Text = string.Empty;
+                SetDialogFieldEnabled(autoBus, true);
+
+                var filteredBuses = GetBusesForRoute(_allRoutes, selectedSchool, selectedTown);
+                autoBus.Adapter = CreateAdapter(filteredBuses.ToArray());
+                autoBus.ShowDropDown();
+            };
+
+            // --- 4. Save Logic ---
+            btnSave.Click += (s, e) =>
+            {
+                if (string.IsNullOrEmpty(autoSchool.Text) || string.IsNullOrEmpty(autoBus.Text))
+                {
+                    Toast.MakeText(this, "אנא השלם את כל השדות", ToastLength.Short).Show();
+                    return;
+                }
+
+                // Update the state object (ActiveBus model)
+                state.TripData.SchoolName = autoSchool.Text;
+                state.TripData.Town = autoTown.Text;
+                state.TripData.BusLine = autoBus.Text;
+
+                RenderCards(); // Refresh dashboard
+                dialog.Dismiss();
+            };
+
+            dialog.Show();
+        }
+        private void ConfigureSearchableField(AutoCompleteTextView view)
+        {
+            view.Threshold = 1;
+            view.Click += (s, e) => view.ShowDropDown();
+            view.FocusChange += (s, e) => { if (e.HasFocus) view.ShowDropDown(); };
+        }
+        private void SetDialogFieldEnabled(AutoCompleteTextView view, bool isEnabled)
+        {
+            view.Enabled = isEnabled;
+            view.Alpha = isEnabled ? 1.0f : 0.5f;
+
+            var parent = view.Parent.Parent as TextInputLayout;
+            if (parent != null)
+            {
+                parent.Enabled = isEnabled;
+            }
+        }
+        #endregion
+
+        #region Location Listener Implementation
+
+        public void OnLocationChanged(Location location)
+        {
+            var activeCard = _driverCards.FirstOrDefault(c => c.IsDriving);
+            if (activeCard != null)
+            {
+                activeCard.TripData.Latitude = location.Latitude;
+                activeCard.TripData.Longitude = location.Longitude;
+                _ = BusesRepository.UpdateBusLocation(activeCard.TripData);
+            }
+        }
+
+        public void OnProviderDisabled(string provider) { }
+        public void OnProviderEnabled(string provider) { }
+        public void OnStatusChanged(string provider, Availability status, Bundle extras) { }
+
+        #endregion
 
         private void CheckAndRequestLocationPermission()
         {
             if (CheckSelfPermission(Android.Manifest.Permission.AccessFineLocation) != Permission.Granted)
             {
-                RequestPermissions(new string[] {
-                    Android.Manifest.Permission.AccessFineLocation,
-                    Android.Manifest.Permission.AccessCoarseLocation
-                }, REQUEST_LOCATION_ID);
+                RequestPermissions(new string[] { Android.Manifest.Permission.AccessFineLocation }, REQUEST_LOCATION_ID);
             }
         }
 
-        // Handle the user's choice (Allow/Deny)
-        public override void OnRequestPermissionsResult(int requestCode, string[] permissions, Permission[] grantResults)
+
+        public List<string> GetSchools(List<BusRoute> _allRoutes)
         {
-            if (requestCode == REQUEST_LOCATION_ID)
-            {
-                if (grantResults.Length > 0 && grantResults[0] == Permission.Granted)
-                {
-                    Toast.MakeText(this, "Permission Granted!", ToastLength.Short).Show();
-                }
-                else
-                {
-                    Toast.MakeText(this, "Location permission is required for this app to work.", ToastLength.Long).Show();
-                }
-            }
+            return _allRoutes.Select(r => r.School)
+                             .Distinct()
+                             .OrderBy(s => s)
+                             .ToList();
         }
 
-        #endregion
-
-        #region Event Handlers (SOLID: Business Logic)
-
-        private async void OnStartDriveClicked(object sender, EventArgs e)
+        public List<string> GetTownsForSchool(List<BusRoute> _allRoutes, string schoolName)
         {
-            // Final safety check before starting GPS
-            if (CheckSelfPermission(Android.Manifest.Permission.AccessFineLocation) != Permission.Granted)
-            {
-                CheckAndRequestLocationPermission();
-                return;
-            }
-
-            try
-            {
-                UpdateUIState(true);
-                currentTrip.Status = "Active";
-
-                // Interval: 15 seconds (15000ms), Distance: 2 meters
-                locManager.RequestLocationUpdates(LocationManager.NetworkProvider, 15000, 2, this);
-
-                // Update Firebase immediately so students see the bus go "Online"
-                await FireBaseHelper.UpdateBusLocation(currentTrip);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(TAG, "GPS Start Error: " + ex.Message);
-            }
+            return _allRoutes.Where(r => r.School == schoolName)
+                             .Select(r => r.Town)
+                             .Distinct()
+                             .OrderBy(t => t)
+                             .ToList();
         }
 
-        private async void OnStopDriveClicked(object sender, EventArgs e)
+        public List<string> GetBusesForRoute(List<BusRoute> _allRoutes, string school, string town)
         {
-            UpdateUIState(false);
-            locManager.RemoveUpdates(this);
+            var buses = _allRoutes.Where(r => r.School == school && r.Town == town)
+                                  .Select(r => r.BusLine)
+                                  .OrderBy(b => b)
+                                  .ToList();
 
-            currentTrip.Status = "Inactive";
-
-            // Mark as Inactive in Firebase so the icon disappears for students
-            await FireBaseHelper.UpdateBusLocation(currentTrip);
-        }
-
-        #endregion
-
-        #region UI & Location Logic
-
-        private void UpdateUIState(bool isTracking)
-        {
-            btnStart.Enabled = !isTracking;
-            btnStop.Enabled = isTracking;
-
-            if (isTracking)
+            if (buses.Count > 0)
             {
-                statusText.Text = "Status: LIVE TRACKING (15s)";
-                statusText.SetTextColor(Android.Graphics.Color.Green);
+                buses.Insert(0, "Any Available Bus");
             }
-            else
-            {
-                statusText.Text = "Status: OFFLINE";
-                statusText.SetTextColor(Android.Graphics.Color.Red);
-            }
+
+            return buses;
         }
+    }
 
-        public void OnLocationChanged(Location location)
-        {
-            Log.Debug(TAG, $"GPS Update: {location.Latitude}, {location.Longitude}");
-
-            // Update the Model
-            currentTrip.Latitude = location.Latitude;
-            currentTrip.Longitude = location.Longitude;
-
-            // "Fire and Forget" update to Firebase
-            _ = FireBaseHelper.UpdateBusLocation(currentTrip);
-        }
-
-        // Mandatory interface methods
-        public void OnProviderDisabled(string provider) => Log.Warn(TAG, "GPS Provider Disabled");
-        public void OnProviderEnabled(string provider) => Log.Info(TAG, "GPS Provider Enabled");
-        public void OnStatusChanged(string provider, Availability status, Bundle extras) { }
-
-        #endregion
+    public class DriverCardState
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public string FirebaseDocumentId { get; set; } // To track the live trip doc
+        public ActiveBus TripData { get; set; } // Your existing model
+        public bool IsDriving { get; set; } = false;
     }
 }

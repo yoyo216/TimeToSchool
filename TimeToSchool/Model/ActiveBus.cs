@@ -45,7 +45,7 @@ namespace TimeToSchool.Model
         // Helper to generate the unique ID
         public string GetDocId()
         {
-            string rawId = $"{Date}_{SchoolName}_{Town}_{BusLine}_{DriverId}";
+            string rawId = $"{Date}_{SchoolName}_{Town}_{BusLine}_{DriverId.Substring(0, 6)}";
             return rawId.Replace(" ", "_").ToLower();
         }
     }

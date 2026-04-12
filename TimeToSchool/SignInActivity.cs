@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using TimeToSchool.BusinessLogic;
+using TimeToSchool.Helpers;
 using TimeToSchool.Service;
 
 namespace TimeToSchool
@@ -42,19 +43,18 @@ namespace TimeToSchool
             btnSignIn.SetOnClickListener(this);
             btnSighUp.SetOnClickListener(this);
 
+            mProgressDialog = UIHelper.CreateProgressDialog(this);
             //Debug Mode
             if (ProManager.DebugMode)
             {
                 etEmail.Text = "yoav@gmail.com";
                 etPass.Text = "123456";
-                ShowProgressBar(true);
-                SignInWithEmailAndPassword();
             }
 
         }
         private async void SignInWithEmailAndPassword()
         {
-            string userAuthID = await FireBaseHelper.SignInUserAsync(etEmail.Text, etPass.Text);
+            string userAuthID = await UsersRepository.SignInUserAsync(etEmail.Text, etPass.Text);
             if (userAuthID != null) //Success
             {
                 Log.Debug(ProManager.TAG, $"Firebase Auth SignIn success: {etEmail.Text} {etPass.Text}");
@@ -63,7 +63,7 @@ namespace TimeToSchool
             }
             else
             {
-                ShowProgressBar(false);
+                mProgressDialog.Dismiss();
                 Log.Debug(ProManager.TAG, $"Firebase Auth SignIn Failed: {etEmail.Text} {etPass.Text}");
                 Toast.MakeText(this, "SignIn Process failed", ToastLength.Short).Show();
             }
@@ -71,19 +71,22 @@ namespace TimeToSchool
 
         private async void GetCurrentUserFromDB(string userAuthID)
         {
-            var userfromDB = await FireBaseHelper.GetUserById(userAuthID);
+            var userfromDB = await UsersRepository.GetUserById(userAuthID);
 
             if (userfromDB != null)
             {
                 //Get current user from Firestore DB
-                //Set Current User 
-                ShowProgressBar(false);
+                //Set Current User
+                mProgressDialog.Dismiss();
                 ProManager.CurrentUser = userfromDB;
-                StartActivity(typeof(AdminMainActivity));
+                if (ProManager.CurrentUser.IsAdmin)
+                    StartActivity(typeof(AdminMainActivity));
+                else
+                    StartActivity(typeof(DriverActivity));
             }
             else
             {
-                ShowProgressBar(false);
+                mProgressDialog.Dismiss();
                 Log.Debug(ProManager.TAG, "SighIn: Failed get user from DB");
                 Toast.MakeText(this, "SignIn Process failed", ToastLength.Short).Show();
             }
@@ -97,7 +100,7 @@ namespace TimeToSchool
             {
                 if (Validate())
                 {
-                    ShowProgressBar(true);
+                    mProgressDialog.Show();
                     SignInWithEmailAndPassword();
                 }
             }
@@ -108,50 +111,16 @@ namespace TimeToSchool
 
         }
         
-        private void ShowProgressBar(bool show)
-        {
-            //android:background="@android:color/transparent"
-
-            if (show)
-            {
-                mProgressDialog = new Dialog(this, Android.Resource.Style.ThemeNoTitleBar);
-                View view = LayoutInflater.From(this).Inflate(Resource.Layout.fb_progressbar, null);
-                //var mProgressMessage = (TextView)view.FindViewById(Resource.Id.;
-                //mProgressMessage.Text = "Loading...";
-                mProgressDialog.Window.SetBackgroundDrawableResource(Resource.Color.mtrl_btn_transparent_bg_color);
-                mProgressDialog.SetContentView(view);
-                mProgressDialog.SetCancelable(false);
-                mProgressDialog.Show();
-            }
-            else
-            {
-                mProgressDialog.Dismiss();
-            }
-        }
+ 
         public override bool DispatchTouchEvent(MotionEvent ev)
         {// hiding keyboard when user clicks outside of EditText
-            if (ev.Action == MotionEventActions.Down)
-            {
-                View v = CurrentFocus;
-                if (v is EditText)
-                {
-                    Rect outRect = new Rect();
-                    v.GetGlobalVisibleRect(outRect);
-                    if (!outRect.Contains((int)ev.RawX, (int)ev.RawY))
-                        HideKeyboard();
-                }
-            }
+            UIHelper.HandleOutsideTouch(this, ev);
             return base.DispatchTouchEvent(ev);
         }
 
         private void HideKeyboard()
         {
-            var imm = (Android.Views.InputMethods.InputMethodManager)GetSystemService(InputMethodService);
-            if (CurrentFocus != null)
-            {
-                imm.HideSoftInputFromWindow(CurrentFocus.WindowToken, 0);
-                CurrentFocus.ClearFocus();
-            }
+            UIHelper.HideKeyboard(this);    
         }
         private bool Validate()
         {// Basic validation for email and password fields

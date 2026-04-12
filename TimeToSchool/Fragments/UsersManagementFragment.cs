@@ -78,13 +78,13 @@ namespace TimeToSchool.Fragments
         public override void OnPause()
         {
             base.OnPause();
-            FireBaseHelper.StopUsersListener();
+            UsersRepository.StopUsersListener();
         }
 
         private void FetchUsersFromDB()
         {
-            FireBaseHelper.FetchUsersListener();
-            FireBaseHelper.FirestoreEventListener.getEvent += (error, args) =>
+            UsersRepository.FetchUsersListener();
+            UsersRepository.FirestoreEventListener.getEvent += (error, args) =>
             {
                 Activity?.RunOnUiThread(() => {
                     ShowProgressBar(false);

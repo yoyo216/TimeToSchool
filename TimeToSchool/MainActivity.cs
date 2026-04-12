@@ -6,7 +6,12 @@ using Android.Widget;
 using AndroidX.AppCompat.App;
 using Google.Android.Material.TextField;
 using System;
+using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Linq;
+using TimeToSchool.Helpers;
+using TimeToSchool.Model;
+using TimeToSchool.Service;
 
 namespace TimeToSchool
 {
@@ -25,8 +30,8 @@ namespace TimeToSchool
         private Button btnHeaderSignIn;
 
         // Logic & Data Dependencies
-        private readonly IDataRepository _repository = new LocalDataRepository();
         private readonly SelectionValidator _validator = new SelectionValidator();
+        private List<BusRoute> _allRoutes;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -34,13 +39,32 @@ namespace TimeToSchool
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             SetContentView(Resource.Layout.activity_main);
 
-            InitViews();
-            SetupAdapters();
-            SetupDropdownBehavior();
-            SetupEvents();
+            FireBaseHelper.Initialize();
+            FillAllroutes();
+        }
 
-            // Initial UI State
-            ValidateFields();
+        private async void FillAllroutes()
+        {
+            try
+            {
+                _allRoutes = await BusesRepository.GetBusesCollection();
+
+
+                InitViews();
+                SetupAdapters();
+                SetupDropdownBehavior();
+                SetupEvents();
+
+                // Initial UI State
+                ValidateFields();
+
+
+            }
+            catch (Exception ex)
+            {
+
+                //handle excpetion
+            }
         }
 
         private void InitViews()
@@ -59,7 +83,7 @@ namespace TimeToSchool
 
         private void SetupAdapters()
         {
-            autoSchool.Adapter = CreateAdapter(_repository.GetSchools().ToArray());
+            autoSchool.Adapter = CreateAdapter(GetSchools(_allRoutes).ToArray());
             autoTown.Adapter = CreateAdapter(new string[] { });
             autoBus.Adapter = CreateAdapter(new string[] { });
         }
@@ -112,7 +136,7 @@ namespace TimeToSchool
             SetFieldEnabled(autoTown, true);
             SetFieldEnabled(autoBus, false);
 
-            var filteredTowns = _repository.GetTownsForSchool(selectedSchool);
+            var filteredTowns = GetTownsForSchool(_allRoutes, selectedSchool);
             autoTown.Adapter = CreateAdapter(filteredTowns.ToArray());
 
             HideKeyboard();
@@ -126,7 +150,7 @@ namespace TimeToSchool
             autoBus.Text = string.Empty;
             SetFieldEnabled(autoBus, true);
 
-            var filteredBuses = _repository.GetBusesForRoute(selectedSchool, selectedTown);
+            var filteredBuses = GetBusesForRoute(_allRoutes, selectedSchool, selectedTown);
             autoBus.Adapter = CreateAdapter(filteredBuses.ToArray());
 
             HideKeyboard();
@@ -174,27 +198,44 @@ namespace TimeToSchool
 
         private void HideKeyboard()
         {
-            var imm = (Android.Views.InputMethods.InputMethodManager)GetSystemService(InputMethodService);
-            if (CurrentFocus != null)
-            {
-                imm.HideSoftInputFromWindow(CurrentFocus.WindowToken, 0);
-                CurrentFocus.ClearFocus();
-            }
+            UIHelper.HideKeyboard(this);
         }
 
         public override bool DispatchTouchEvent(MotionEvent ev)
         {
-            if (ev.Action == MotionEventActions.Down)
-            {
-                View v = CurrentFocus;
-                if (v is EditText)
-                {
-                    Rect outRect = new Rect();
-                    v.GetGlobalVisibleRect(outRect);
-                    if (!outRect.Contains((int)ev.RawX, (int)ev.RawY)) HideKeyboard();
-                }
-            }
+            UIHelper.HandleOutsideTouch(this, ev);
             return base.DispatchTouchEvent(ev);
+        }
+        public List<string> GetSchools(List<BusRoute> _allRoutes)
+        {
+            return _allRoutes.Select(r => r.School)
+                             .Distinct()
+                             .OrderBy(s => s)
+                             .ToList();
+        }
+
+        public List<string> GetTownsForSchool(List<BusRoute> _allRoutes, string schoolName)
+        {
+            return _allRoutes.Where(r => r.School == schoolName)
+                             .Select(r => r.Town)
+                             .Distinct()
+                             .OrderBy(t => t)
+                             .ToList();
+        }
+
+        public List<string> GetBusesForRoute(List<BusRoute> _allRoutes, string school, string town)
+        {
+            var buses = _allRoutes.Where(r => r.School == school && r.Town == town)
+                                  .Select(r => r.BusLine)
+                                  .OrderBy(b => b)
+                                  .ToList();
+
+            if (buses.Count > 0)
+            {
+                buses.Insert(0, "Any Available Bus");
+            }
+
+            return buses;
         }
     }
 }

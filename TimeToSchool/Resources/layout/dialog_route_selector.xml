@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="20dp">
+
+	<LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+		<TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="הגדרת מסלול נסיעה"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginBottom="20dp"
+            android:textColor="#333333"/>
+
+		<com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilSchool"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="בחר בית ספר"
+            android:layout_marginBottom="12dp">
+			<AutoCompleteTextView
+                android:id="@+id/dialogAutoSchool"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none" />
+		</com.google.android.material.textfield.TextInputLayout>
+
+		<com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilTown"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="בחר יישוב"
+            android:layout_marginBottom="12dp">
+			<AutoCompleteTextView
+                android:id="@+id/dialogAutoTown"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none" />
+		</com.google.android.material.textfield.TextInputLayout>
+
+		<com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilBus"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="בחר קו אוטובוס"
+            android:layout_marginBottom="24dp">
+			<AutoCompleteTextView
+                android:id="@+id/dialogAutoBus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none" />
+		</com.google.android.material.textfield.TextInputLayout>
+
+		<Button
+            android:id="@+id/btnSaveRoute"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="שמור ועדכן"
+            android:backgroundTint="#4CAF50"
+            app:cornerRadius="12dp"
+            android:textSize="18sp" />
+
+	</LinearLayout>
+</ScrollView>

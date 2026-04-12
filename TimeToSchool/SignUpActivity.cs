@@ -63,12 +63,12 @@ namespace TimeToSchool
             ShowProgressBar(true);
             try
             {
-                _user.Id = await FireBaseHelper.InsertAsync(_user);
+                _user.Id = await UsersRepository.InsertAsync(_user);
                 ShowProgressBar(false);
                 Toast.MakeText(this, $"SignUp succeeded!", ToastLength.Short).Show();
 
                 ProManager.CurrentUser = _user;
-                StartActivity(typeof(SignInActivity));
+                StartActivity(typeof(AdminMainActivity));
             }
             catch (Exception)
             {
