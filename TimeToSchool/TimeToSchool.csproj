@@ -81,7 +81,6 @@
     <Compile Include="Model\BusRoute.cs" />
     <Compile Include="Model\User.cs" />
     <Compile Include="Service\BusesRepository.cs" />
-    <Compile Include="Service\LocalDataRepository.cs" />
     <Compile Include="MainActivity.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -192,7 +191,7 @@
     <AndroidResource Include="Resources\layout\fragment_buses_management.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
-    <AndroidResource Include="Resources\layout\createbusline_layout.xml">
+    <AndroidResource Include="Resources\layout\dialog_bus_form.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
     <AndroidResource Include="Resources\layout\fragment_all_buses.xml">

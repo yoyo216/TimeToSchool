@@ -20,7 +20,6 @@ namespace TimeToSchool
     [Activity(Label = "Driver Console", MainLauncher = false)]
     public class DriverActivity : Activity, ILocationListener
     {
-        private const string TAG = "YOAV_APP_DEBUG";
         private const int REQUEST_LOCATION_ID = 1001;
 
         // UI Components
@@ -329,10 +328,6 @@ namespace TimeToSchool
                                   .OrderBy(b => b)
                                   .ToList();
 
-            if (buses.Count > 0)
-            {
-                buses.Insert(0, "Any Available Bus");
-            }
 
             return buses;
         }

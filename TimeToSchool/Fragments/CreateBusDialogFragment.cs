@@ -16,26 +16,70 @@ namespace TimeToSchool.Fragments
 {
     public class CreateBusDialogFragment : AndroidX.Fragment.App.DialogFragment
     {
-        EditText etSchool, etTown, etBusLine;
-        Button btnSave, btnCancel;
+        private EditText etSchool, etTown, etBusLine;
+        private Button btnSave, btnCancel;
+        private string _currentBusId = null;
+
+        // SOLID: Use a Static Factory Method instead of a parameterized constructor
+        // This ensures Android can recreate the fragment safely.
+        public static CreateBusDialogFragment NewInstance(BusRoute bus = null)
+        {
+            var frag = new CreateBusDialogFragment();
+            if (bus != null)
+            {
+                var args = new Bundle();
+                args.PutString("busId", bus.Id);
+                args.PutString("school", bus.School);
+                args.PutString("town", bus.Town);
+                args.PutString("busLine", bus.BusLine);
+                frag.Arguments = args;
+            }
+            return frag;
+        }
 
         public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            // Set the dialog to have no title bar for a cleaner look
             Dialog.Window.RequestFeature(WindowFeatures.NoTitle);
+            return inflater.Inflate(Resource.Layout.dialog_bus_form, container, false);
+        }
 
-            View view = inflater.Inflate(Resource.Layout.createbusline_layout, container, false);
+        public override void OnViewCreated(View view, Bundle savedInstanceState)
+        {
+            base.OnViewCreated(view, savedInstanceState);
 
+            // 1. Initialize Views
             etSchool = view.FindViewById<EditText>(Resource.Id.etSchool);
             etTown = view.FindViewById<EditText>(Resource.Id.etTown);
             etBusLine = view.FindViewById<EditText>(Resource.Id.etBusLine);
             btnSave = view.FindViewById<Button>(Resource.Id.btnSaveBus);
             btnCancel = view.FindViewById<Button>(Resource.Id.btnCancel);
 
+            // 2. Setup Events
             btnCancel.Click += (s, e) => Dismiss();
             btnSave.Click += OnSaveClicked;
 
-            return view;
+            // 3. Handle Pre-filling (Logic separated from lifecycle)
+            PreFillBusData();
+        }
+
+        private void PreFillBusData()
+        {
+            string title = "הוספת מסלול חדש";
+            string buttonText = "שמור מסלול";
+            if (Arguments != null && Arguments.ContainsKey("busId"))
+            {
+                _currentBusId = Arguments.GetString("busId");
+                etSchool.Text = Arguments.GetString("school");
+                etTown.Text = Arguments.GetString("town");
+                etBusLine.Text = Arguments.GetString("busLine");
+
+                title = "עריכת מסלול קיים";
+                buttonText = "עדכן שינויים";
+            }
+            var tvTitle = View.FindViewById<TextView>(Resource.Id.tvDialogTitle);
+            if (tvTitle != null) tvTitle.Text = title;
+
+            btnSave.Text = buttonText;  
         }
 
         private async void OnSaveClicked(object sender, EventArgs e)
@@ -44,40 +88,54 @@ namespace TimeToSchool.Fragments
             string town = etTown.Text.Trim();
             string line = etBusLine.Text.Trim();
 
-            if (string.IsNullOrEmpty(school) || string.IsNullOrEmpty(town) || string.IsNullOrEmpty(line))
-            {
-                Toast.MakeText(Activity, "Please fill all fields", ToastLength.Short).Show();
-                return;
-            }
+            if (!ValidateInputs(school, town, line)) return;
 
-            // Disable button so user doesn't click twice
             btnSave.Enabled = false;
+            bool isEditing = !string.IsNullOrEmpty(_currentBusId);
 
             try
             {
-                BusRoute newRoute = new BusRoute
+                BusRoute busData = new BusRoute
                 {
+                    Id = _currentBusId, // Important: ID is null for new, exists for edit
                     School = school,
                     Town = town,
                     BusLine = line
                 };
 
-                await FireBaseHelper.AddBusRoute(newRoute);
+                // SOLID: The repository handles deciding between Add or Update based on ID
+                bool success = string.IsNullOrEmpty(_currentBusId)
+                    ? await BusesRepository.AddBusRoute(busData)
+                    : await BusesRepository.UpdateBus(busData);
 
-                Toast.MakeText(Activity, "Bus route added!", ToastLength.Short).Show();
-                Dismiss(); // Close the dialog
+                if (success)
+                {
+                    string message = isEditing ? "המסלול עודכן בהצלחה" : "המסלול נוסף בהצלחה";
+                    Toast.MakeText(Activity, message, ToastLength.Short).Show();
+
+                    Dismiss();
+                }
             }
             catch (Exception ex)
             {
-                Toast.MakeText(Activity, "Error: " + ex.Message, ToastLength.Long).Show();
+                Toast.MakeText(Activity, "שגיאה: " + ex.Message, ToastLength.Long).Show();
                 btnSave.Enabled = true;
             }
+        }
+
+        private bool ValidateInputs(string school, string town, string line)
+        {
+            if (string.IsNullOrEmpty(school) || string.IsNullOrEmpty(town) || string.IsNullOrEmpty(line))
+            {
+                Toast.MakeText(Activity, "אנא מלא את כל השדות", ToastLength.Short).Show();
+                return false;
+            }
+            return true;
         }
 
         public override void OnStart()
         {
             base.OnStart();
-            // Make the dialog take up most of the screen width
             Dialog.Window.SetLayout(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
         }
     }

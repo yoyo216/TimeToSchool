@@ -4,70 +4,66 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="6dp">
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginVertical="4dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="3dp">
 
-	<LinearLayout
+	<RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp"
-        android:background="?android:attr/selectableItemBackground">
+        android:padding="12dp">
 
-		<RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+		<LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_toLeftOf="@+id/actionsContainer"
+            android:orientation="vertical">
 
 			<TextView
                 android:id="@+id/tvBusLineName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Line 102"
-                android:textSize="22sp"
+                android:text="קו 102"
+                android:textSize="18sp"
                 android:textStyle="bold"
                 android:textColor="#1976D2" />
 
-			<ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_alignParentRight="true"
-                android:layout_centerVertical="true"
-                android:src="@android:drawable/ic_menu_directions"
-                app:tint="#757575" />
-		</RelativeLayout>
-
-		<TextView
-            android:id="@+id/tvSchoolName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Washington High School"
-            android:textSize="16sp"
-            android:textColor="#212121" />
-
-		<LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="4dp"
-            android:gravity="center_vertical">
-
-			<ImageView
-                android:layout_width="14dp"
-                android:layout_height="14dp"
-                android:src="@android:drawable/ic_menu_mylocation"
-                app:tint="#9E9E9E" />
-
 			<TextView
-                android:id="@+id/tvTownName"
+                android:id="@+id/tvDetails"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="4dp"
-                android:text="Netanya"
+                android:text="ביה''ס שרת | נתניה"
                 android:textSize="14sp"
-                android:textColor="#757575" />
+                android:textColor="#424242" />
 		</LinearLayout>
 
-	</LinearLayout>
+		<LinearLayout
+            android:id="@+id/actionsContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:orientation="horizontal">
+
+			<ImageButton
+                android:id="@+id/btnEditBus"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_edit"
+                android:padding="8dp" />
+
+			<ImageButton
+                android:id="@+id/btnDeleteBus"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_delete"
+                android:padding="8dp"
+                android:tint="#D32F2F" />
+		</LinearLayout>
+
+	</RelativeLayout>
 </androidx.cardview.widget.CardView>

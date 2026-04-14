@@ -1,19 +1,23 @@
 ﻿using Android.App;
 using Android.Content;
+using Android.Media; // Access to FireBaseHelper
 using Android.OS;
 using Android.Runtime;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
 using AndroidX.RecyclerView.Widget;
+using Firebase.Firestore; // For QuerySnapshot and DocumentSnapshot
+using Firebase.Firestore.Auth;
 using Google.Android.Material.FloatingActionButton;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Firebase.Firestore; // For QuerySnapshot and DocumentSnapshot
 using TimeToSchool.Adapter;
 using TimeToSchool.Model;
-using TimeToSchool.Service; // Access to FireBaseHelper
+using TimeToSchool.Service;
+using static AndroidX.RecyclerView.Widget.RecyclerView;
+using static TimeToSchool.Service.FireBaseHelper;
 
 namespace TimeToSchool.Fragments
 {
@@ -42,7 +46,6 @@ namespace TimeToSchool.Fragments
             _fabAdd.Click += (sender, e) =>
             {
                 CreateBusDialogFragment dialog = new CreateBusDialogFragment();
-                // Show the dialog over the current fragment
                 dialog.Show(ParentFragmentManager, "CreateBusDialog");
             };
         }
@@ -50,23 +53,58 @@ namespace TimeToSchool.Fragments
         private void SetupRecyclerView()
         {
             _busList = new List<BusRoute>();
-
             _recyclerView.SetLayoutManager(new LinearLayoutManager(Context));
+
+            // Initialize adapter
             _adapter = new BusRViewAdapter(_busList);
+
+            // --- SOLID LINKING ---
+            // We connect the Adapter's "Actions" to our Fragment's "Methods"
+            _adapter.OnDeleteRequest = OnDeleteBusClick;
+            _adapter.OnEditRequest = OnEditBusClick;
+
             _recyclerView.SetAdapter(_adapter);
 
             LoadBusData();
         }
 
-        // Connects to the FireBaseHelper listener
-        private void LoadBusData()
+        // Combined Method: Handles UI and triggers Data logic
+        private void OnDeleteBusClick(BusRoute bus)
         {
-            // Subscribe to the event in FireBaseHelper
-            FireBaseHelper.FetchBusesListener();
-            FireBaseHelper.BusEventListener.getEvent += OnBusesChanged;
+            var builder = new AlertDialog.Builder(Activity);
+            builder.SetTitle("מחיקת מסלול");
+            builder.SetMessage($"האם אתה בטוח שברצונך למחוק את {bus.BusLine} של {bus.School}?");
+
+            builder.SetPositiveButton("מחק", async (s, e) =>
+            {
+                bool success = await BusesRepository.DeleteBus(bus.Id);
+                if (success)
+                {
+                    Toast.MakeText(Context, "המסלול נמחק בהצלחה", ToastLength.Short).Show();
+                    // No need to manually refresh the list because LoadBusData() 
+                    // has a listener that will trigger OnBusesChanged automatically!
+                }
+            });
+
+            builder.SetNegativeButton("ביטול", (s, e) => { /* Do nothing */ });
+            builder.Show();
         }
 
-        // Logic for handling database updates
+        private void OnEditBusClick(BusRoute bus)
+        {
+            // SOLID: Use the static factory method to create the fragment with its arguments
+            var editDialog = CreateBusDialogFragment.NewInstance(bus);
+
+            // Show the dialog
+            editDialog.Show(ParentFragmentManager, "EditBusDialog");
+        }
+
+        private void LoadBusData()
+        {
+            BusesRepository.FetchBusesListener();
+            BusesRepository.BusEventListener.getEvent += OnBusesChanged;
+        }
+
         private void OnBusesChanged(object sender, FirestoreEventListener.TaskListenerEventArgs e)
         {
             var snapshot = e.Result as QuerySnapshot;
@@ -75,7 +113,6 @@ namespace TimeToSchool.Fragments
                 _busList.Clear();
                 foreach (DocumentSnapshot item in snapshot.Documents)
                 {
-                    // Mapping Firestore document fields to the BusRoute class
                     _busList.Add(new BusRoute
                     {
                         Id = item.Id,
@@ -85,19 +122,17 @@ namespace TimeToSchool.Fragments
                     });
                 }
 
-                // Updating the list on the UI thread
                 Activity?.RunOnUiThread(() => _adapter.NotifyDataSetChanged());
             }
         }
 
-        // Lifecycle management to prevent memory leaks and unnecessary data usage
         public override void OnDestroyView()
         {
-            if (FireBaseHelper.BusEventListener != null)
+            if (BusesRepository.BusEventListener != null)
             {
-                FireBaseHelper.BusEventListener.getEvent -= OnBusesChanged;
+                BusesRepository.BusEventListener.getEvent -= OnBusesChanged;
             }
-            FireBaseHelper.StopBusesListener();
+            BusesRepository.StopBusesListener();
             base.OnDestroyView();
         }
     }

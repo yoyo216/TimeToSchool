@@ -15,6 +15,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TimeToSchool.BusinessLogic;
 using TimeToSchool.Model;
+using static TimeToSchool.Service.FireBaseHelper;
 
 namespace TimeToSchool.Service
 {
@@ -39,7 +40,35 @@ namespace TimeToSchool.Service
             BusRegistration = null;
             BusEventListener = null;
         }
-        public static async Task AddBusRoute(BusRoute route)
+        public static async Task<bool> UpdateBus(BusRoute bus)
+        {
+            try
+            {
+                // 1. Create a dictionary of the fields to update
+                // We use Java.Lang.Object to bridge the C# types to the Android Firestore SDK
+                var busData = new Dictionary<string, Java.Lang.Object>
+        {
+            { "BusLine", bus.BusLine },
+            { "School", bus.School },
+            { "Town", bus.Town }
+        };
+
+                // 2. Reference the specific document by its ID and call Update
+                await FirebaseFirestore.Instance
+                    .Collection("BusRoutes") // Ensure this matches your collection name exactly
+                    .Document(bus.Id)
+                    .Update(busData);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Log the error for debugging
+                Log.Error(ProManager.TAG, $"Error updating bus {bus.Id}: {ex.Message}");
+                return false;
+            }
+        }
+        public static async Task<bool> AddBusRoute(BusRoute route)
         {
             try
             {
@@ -52,10 +81,12 @@ namespace TimeToSchool.Service
 
                 // This creates the "BusRoutes" collection automatically
                 await db.Collection("BusRoutes").Add(routeMap);
+                return true;
             }
             catch (Exception ex)
             {
                 throw new Exception("Error saving bus route: " + ex.Message);
+                return false;
             }
         }
         public static async Task UpdateBusLocation(ActiveBus trip)
@@ -112,6 +143,26 @@ namespace TimeToSchool.Service
             {
                 Log.Debug(ProManager.TAG, $"GetUsersCollection general error: {ex.Message}");
                 return routes;
+            }
+        }
+        public static async Task<bool> DeleteBus(string busId)
+        {
+            try
+            {
+                // 1. Reference the specific bus by its unique ID
+                // 2. Call DeleteAsync to remove it from the database
+                await FirebaseFirestore.Instance
+                    .Collection("BusRoutes")
+                    .Document(busId)
+                    .Delete();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Log the error so you can see it in the Output window 
+                Android.Util.Log.Error(ProManager.TAG, "Error deleting bus: " + ex.Message);
+                return false;
             }
         }
         // use to filiter buses
