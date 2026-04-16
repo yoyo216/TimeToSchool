@@ -302,8 +302,6 @@ namespace TimeToSchool
                 RequestPermissions(new string[] { Android.Manifest.Permission.AccessFineLocation }, REQUEST_LOCATION_ID);
             }
         }
-
-
         public List<string> GetSchools(List<BusRoute> _allRoutes)
         {
             return _allRoutes.Select(r => r.School)

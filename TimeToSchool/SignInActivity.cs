@@ -17,19 +17,26 @@ using TimeToSchool.Service;
 
 namespace TimeToSchool
 {
-    [Activity(Label = "Sign In", Name = "com.companyname.timetoschool.SignInActivity")]
-    public class SignInActivity : AppCompatActivity, Android.Views.View.IOnClickListener
+    [Activity(Label = "Sign In", Name = "com.companyname.timetoschool.SignInActivity", MainLauncher = true)]
+    public class SignInActivity : AppCompatActivity, View.IOnClickListener
     {
         private EditText etEmail, etPass;
         private Button btnSignIn;
         private TextView btnSighUp;
+        private CheckBox cbRememberMe;
         private Dialog mProgressDialog;
+        private PreferenceService _prefService; // Define service
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
-            SetContentView(Resource.Layout.signin_layout);
 
+            // 1. Initialize Preference Service
+            _prefService = new PreferenceService(this);
+
+
+
+            SetContentView(Resource.Layout.signin_layout);
             InitilizeViews();
             Log.Debug(ProManager.TAG, $"SignInActivity: OnCreate()");
         }
@@ -40,31 +47,32 @@ namespace TimeToSchool
             etPass = FindViewById<EditText>(Resource.Id.et_password2);
             btnSignIn = FindViewById<Button>(Resource.Id.btn_login2);
             btnSighUp = FindViewById<TextView>(Resource.Id.btn_sign_up);
+
+            // FIX: Initialize the CheckBox!
+            cbRememberMe = FindViewById<CheckBox>(Resource.Id.cbRememberMe);
+
             btnSignIn.SetOnClickListener(this);
             btnSighUp.SetOnClickListener(this);
 
             mProgressDialog = UIHelper.CreateProgressDialog(this);
-            //Debug Mode
+
             if (ProManager.DebugMode)
             {
                 etEmail.Text = "yoav@gmail.com";
                 etPass.Text = "123456";
             }
-
         }
+
         private async void SignInWithEmailAndPassword()
         {
             string userAuthID = await UsersRepository.SignInUserAsync(etEmail.Text, etPass.Text);
-            if (userAuthID != null) //Success
+            if (userAuthID != null)
             {
-                Log.Debug(ProManager.TAG, $"Firebase Auth SignIn success: {etEmail.Text} {etPass.Text}");
-                //Toast.MakeText(this, "SignIn Success", ToastLength.Short).Show();
                 GetCurrentUserFromDB(userAuthID);
             }
             else
             {
                 mProgressDialog.Dismiss();
-                Log.Debug(ProManager.TAG, $"Firebase Auth SignIn Failed: {etEmail.Text} {etPass.Text}");
                 Toast.MakeText(this, "SignIn Process failed", ToastLength.Short).Show();
             }
         }
@@ -72,30 +80,41 @@ namespace TimeToSchool
         private async void GetCurrentUserFromDB(string userAuthID)
         {
             var userfromDB = await UsersRepository.GetUserById(userAuthID);
+            mProgressDialog.Dismiss();
 
             if (userfromDB != null)
             {
-                //Get current user from Firestore DB
-                //Set Current User
-                mProgressDialog.Dismiss();
                 ProManager.CurrentUser = userfromDB;
-                if (ProManager.CurrentUser.IsAdmin)
-                    StartActivity(typeof(AdminMainActivity));
-                else
-                    StartActivity(typeof(DriverActivity));
+                string role = userfromDB.IsAdmin ? "Admin" : "Driver";
+
+                // FIX: Handle the Remember Me saving here
+                if (cbRememberMe.Checked)
+                {
+                    _prefService.SaveUserObject(userfromDB);
+                }
+
+                NavigateByRole(role);
             }
             else
             {
-                mProgressDialog.Dismiss();
-                Log.Debug(ProManager.TAG, "SighIn: Failed get user from DB");
-                Toast.MakeText(this, "SignIn Process failed", ToastLength.Short).Show();
+                Toast.MakeText(this, "Failed to get user profile", ToastLength.Short).Show();
             }
+        }
 
+        private void NavigateByRole(string role)
+        {
+            Intent intent;
+            if (role == "Admin")
+                intent = new Intent(this, typeof(AdminMainActivity));
+            else
+                intent = new Intent(this, typeof(DriverActivity));
+
+            StartActivity(intent);
+            Finish(); // Ensures user can't go back to Login
         }
 
         public void OnClick(View v)
         {
-
             if (v == btnSignIn)
             {
                 if (Validate())
@@ -108,24 +127,22 @@ namespace TimeToSchool
             {
                 StartActivity(typeof(SignUpActivity));
             }
-
         }
-        
- 
+
+        private bool Validate()
+        {
+            if (string.IsNullOrEmpty(etEmail.Text) || string.IsNullOrEmpty(etPass.Text))
+            {
+                Toast.MakeText(this, "Please enter email and password", ToastLength.Short).Show();
+                return false;
+            }
+            return true;
+        }
+
         public override bool DispatchTouchEvent(MotionEvent ev)
-        {// hiding keyboard when user clicks outside of EditText
+        {
             UIHelper.HandleOutsideTouch(this, ev);
             return base.DispatchTouchEvent(ev);
-        }
-
-        private void HideKeyboard()
-        {
-            UIHelper.HideKeyboard(this);    
-        }
-        private bool Validate()
-        {// Basic validation for email and password fields
-
-            return true;
         }
     }
 }

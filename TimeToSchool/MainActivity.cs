@@ -1,4 +1,5 @@
 ﻿using Android.App;
+using Android.Content;
 using Android.Graphics;
 using Android.OS;
 using Android.Views;
@@ -9,9 +10,11 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Linq;
+using TimeToSchool.BusinessLogic;
 using TimeToSchool.Helpers;
 using TimeToSchool.Model;
 using TimeToSchool.Service;
+using static Xamarin.Essentials.Platform;
 
 namespace TimeToSchool
 {
@@ -40,7 +43,32 @@ namespace TimeToSchool
             SetContentView(Resource.Layout.activity_main);
 
             FireBaseHelper.Initialize();
-            FillAllroutes();
+            CheckUserSession();
+            FillAllroutes();          
+        }
+
+        private void CheckUserSession()
+        {
+            try
+            {
+                var prefService = new PreferenceService(this);
+
+                var isLoggedInUser = prefService.GetSavedUser();
+                if (isLoggedInUser != null)
+                {
+                    // Bridge the data from storage to the RAM variable
+                    ProManager.CurrentUser = isLoggedInUser as User;
+
+                    if ((isLoggedInUser as User).IsAdmin)
+                        StartActivity(typeof(AdminMainActivity));
+                    else
+                        StartActivity(typeof(DriverActivity));
+                }
+            }
+            catch (Exception ex)
+            {
+                 Toast.MakeText(this, "Error checking user session. Please try again.", ToastLength.Long).Show();
+            }
         }
 
         private async void FillAllroutes()
@@ -48,8 +76,7 @@ namespace TimeToSchool
             try
             {
                 _allRoutes = await BusesRepository.GetBusesCollection();
-
-
+              
                 InitViews();
                 SetupAdapters();
                 SetupDropdownBehavior();

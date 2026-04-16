@@ -66,6 +66,14 @@ namespace TimeToSchool.Fragments
         public override void OnResume()
         {
             base.OnResume();
+
+            // Defensive check: If for some reason the app lost the user object, send them back to login
+            if (ProManager.CurrentUser == null)
+            {
+                StartActivity(new Intent(Activity, typeof(SignInActivity)));
+                return;
+            }
+
             tvusername.Text = ProManager.CurrentUser.FirstName;
 
             if (ProManager.CurrentUser.IsAdmin)
@@ -74,6 +82,7 @@ namespace TimeToSchool.Fragments
             ShowProgressBar(true);
             FetchUsersFromDB();
         }
+
 
         public override void OnPause()
         {
