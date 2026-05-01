@@ -1,16 +1,13 @@
-﻿using Android.App;
-using Android.Content;
+using Android.App;
 using Android.Content.PM;
 using Android.Locations;
 using Android.OS;
-using Android.Util;
 using Android.Views;
 using Android.Widget;
 using Google.Android.Material.TextField;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using TimeToSchool.BusinessLogic;
 using TimeToSchool.Model;
 using TimeToSchool.Service;
@@ -18,48 +15,54 @@ using TimeToSchool.Service;
 namespace TimeToSchool
 {
     [Activity(Label = "Driver Console", MainLauncher = false)]
-    public class DriverActivity : Activity, ILocationListener
+    public class DriverActivity : BaseDrawerActivity, ILocationListener
     {
         private const int REQUEST_LOCATION_ID = 1001;
 
-        // UI Components
         private LinearLayout cardsContainer;
-        private ImageButton btnAddRoute;
         private TextView globalStatusText;
 
-        // Data & Services
         private LocationManager locManager;
         private List<DriverCardState> _driverCards = new List<DriverCardState>();
         private List<BusRoute> _allRoutes;
         private bool _isGlobalDriving = false;
 
-        protected override void OnCreate(Bundle savedInstanceState)
-        {
-            base.OnCreate(savedInstanceState);
-            SetContentView(Resource.Layout.driverpage_layout);
+        protected override int GetContentLayoutId() => Resource.Layout.driverpage_layout;
 
+        protected override void OnCreateDrawerContent(Bundle savedInstanceState)
+        {
             InitViews();
             SetupServices();
             CheckAndRequestLocationPermission();
             LoadInitialData();
         }
 
-        private void InitViews()
+        public override bool OnCreateOptionsMenu(IMenu menu)
         {
-            cardsContainer = FindViewById<LinearLayout>(Resource.Id.cardsContainer);
-            btnAddRoute = FindViewById<ImageButton>(Resource.Id.btnAddRoute);
-            globalStatusText = FindViewById<TextView>(Resource.Id.globalStatusText);
+            MenuInflater.Inflate(Resource.Menu.driver_menu, menu);
+            return true;
+        }
 
-            btnAddRoute.Click += (s, e) =>
+        public override bool OnOptionsItemSelected(IMenuItem item)
+        {
+            if (item.ItemId == Resource.Id.action_add_route)
             {
                 if (_isGlobalDriving)
                 {
-                    Toast.MakeText(this, "לא ניתן להוסיף מסלול בזמן נסיעה", ToastLength.Short).Show();
-                    return;
+                    Android.Widget.Toast.MakeText(this, "לא ניתן להוסיף מסלול בזמן נסיעה", ToastLength.Short).Show();
+                    return true;
                 }
                 _driverCards.Add(new DriverCardState { TripData = new ActiveBus() });
                 RenderCards();
-            };
+                return true;
+            }
+            return base.OnOptionsItemSelected(item);
+        }
+
+        private void InitViews()
+        {
+            cardsContainer = FindViewById<LinearLayout>(Resource.Id.cardsContainer);
+            globalStatusText = FindViewById<TextView>(Resource.Id.globalStatusText);
         }
 
         private void SetupServices()
@@ -69,10 +72,8 @@ namespace TimeToSchool
 
         private async void LoadInitialData()
         {
-            // Fetch the static database of buses for the dialogs
             _allRoutes = await BusesRepository.GetBusesCollection();
 
-            // Start with one empty card if none exist
             if (_driverCards.Count == 0)
                 _driverCards.Add(new DriverCardState { TripData = new ActiveBus() });
 
@@ -87,24 +88,19 @@ namespace TimeToSchool
 
             foreach (var state in _driverCards)
             {
-                // 1. Inflate the custom card item
                 View cardView = LayoutInflater.From(this).Inflate(Resource.Layout.driver_route_item, null);
 
-                // 2. Find Views
                 var tvSchool = cardView.FindViewById<TextView>(Resource.Id.tvSchoolName);
                 var tvStatus = cardView.FindViewById<TextView>(Resource.Id.tvStatusLabel);
                 var btnAction = cardView.FindViewById<LinearLayout>(Resource.Id.btnTripAction);
                 var btnSettings = cardView.FindViewById<ImageButton>(Resource.Id.btnSettings);
 
-                // 3. Set Text (Using BusLine name as requested)
                 tvSchool.Text = !string.IsNullOrEmpty(state.TripData.SchoolName)
                                 ? $"{state.TripData.SchoolName} - קו {state.TripData.BusLine}"
                                 : "לחץ על ההגדרות לבחירת מסלול";
 
-                // 4. Apply Visual States (Red/Green/Grey)
                 ApplyVisualState(state, btnAction, tvStatus, btnSettings);
 
-                // 5. Events
                 btnAction.Click += (s, e) => ToggleTrip(state);
                 btnSettings.Click += (s, e) => OpenRouteSelectionDialog(state);
 
@@ -132,7 +128,7 @@ namespace TimeToSchool
             }
             else
             {
-                btnAction.SetBackgroundColor(Android.Graphics.Color.ParseColor("#4CAF50")); // Material Green
+                btnAction.SetBackgroundColor(Android.Graphics.Color.ParseColor("#4CAF50"));
                 tvStatus.Text = "התחל נסיעה";
                 btnAction.Enabled = true;
                 btnAction.Alpha = 1.0f;
@@ -142,13 +138,12 @@ namespace TimeToSchool
 
         #endregion
 
-        #region Business Logic (Toggle & Dialog)
+        #region Business Logic
 
         private async void ToggleTrip(DriverCardState state)
         {
             if (state.IsDriving)
             {
-                // --- STOP LOGIC ---
                 state.IsDriving = false;
                 _isGlobalDriving = false;
                 locManager.RemoveUpdates(this);
@@ -158,10 +153,9 @@ namespace TimeToSchool
             }
             else
             {
-                // --- START LOGIC ---
                 if (string.IsNullOrEmpty(state.TripData.BusLine))
                 {
-                    Toast.MakeText(this, "אנא הגדר מסלול תחילה", ToastLength.Short).Show();
+                    Android.Widget.Toast.MakeText(this, "אנא הגדר מסלול תחילה", ToastLength.Short).Show();
                     return;
                 }
 
@@ -173,110 +167,70 @@ namespace TimeToSchool
                 state.TripData.DriverId = ProManager.CurrentUser.Id;
                 state.TripData.Date = DateTime.Now.ToString("yyyy-MM-dd");
 
-                // Request Updates (15s, 2m as per original logic)
                 locManager.RequestLocationUpdates(LocationManager.NetworkProvider, 15000, 2, this);
-
-                // Create document and save ID
                 await BusesRepository.UpdateBusLocation(state.TripData);
             }
             RenderCards();
         }
-        private ArrayAdapter<string> CreateAdapter(string[] data)
-        {
-            // Note: Ensure 'dropdown_item.xml' exists in Resources/layout
-            return new ArrayAdapter<string>(this, Resource.Layout.dropdown_item, data);
-        }
+
         private void OpenRouteSelectionDialog(DriverCardState state)
         {
             Dialog dialog = new Dialog(this);
             dialog.SetContentView(Resource.Layout.dialog_route_selector);
             dialog.Window.SetLayout(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
 
-            // --- 1. Init Views (from dialog layout) ---
             var autoSchool = dialog.FindViewById<AutoCompleteTextView>(Resource.Id.dialogAutoSchool);
             var autoTown = dialog.FindViewById<AutoCompleteTextView>(Resource.Id.dialogAutoTown);
             var autoBus = dialog.FindViewById<AutoCompleteTextView>(Resource.Id.dialogAutoBus);
             var btnSave = dialog.FindViewById<Button>(Resource.Id.btnSaveRoute);
 
-            // --- 2. Setup Initial Dropdown Behavior ---
             ConfigureSearchableField(autoSchool);
             ConfigureSearchableField(autoTown);
             ConfigureSearchableField(autoBus);
 
-            // Initial state: Only School is ready
             autoSchool.Adapter = CreateAdapter(GetSchools(_allRoutes).ToArray());
             SetDialogFieldEnabled(autoTown, false);
             SetDialogFieldEnabled(autoBus, false);
-
-            // --- 3. Selection Events (Cascading Logic from MainActivity) ---
 
             autoSchool.ItemClick += (s, e) =>
             {
                 string selectedSchool = autoSchool.Text;
                 autoTown.Text = string.Empty;
                 autoBus.Text = string.Empty;
-
                 SetDialogFieldEnabled(autoTown, true);
                 SetDialogFieldEnabled(autoBus, false);
-
-                var filteredTowns = GetTownsForSchool(_allRoutes, selectedSchool);
-                autoTown.Adapter = CreateAdapter(filteredTowns.ToArray());
+                autoTown.Adapter = CreateAdapter(GetTownsForSchool(_allRoutes, selectedSchool).ToArray());
                 autoTown.ShowDropDown();
             };
 
             autoTown.ItemClick += (s, e) =>
             {
-                string selectedSchool = autoSchool.Text;
-                string selectedTown = autoTown.Text;
-
                 autoBus.Text = string.Empty;
                 SetDialogFieldEnabled(autoBus, true);
-
-                var filteredBuses = GetBusesForRoute(_allRoutes, selectedSchool, selectedTown);
-                autoBus.Adapter = CreateAdapter(filteredBuses.ToArray());
+                autoBus.Adapter = CreateAdapter(GetBusesForRoute(_allRoutes, autoSchool.Text, autoTown.Text).ToArray());
                 autoBus.ShowDropDown();
             };
 
-            // --- 4. Save Logic ---
             btnSave.Click += (s, e) =>
             {
                 if (string.IsNullOrEmpty(autoSchool.Text) || string.IsNullOrEmpty(autoBus.Text))
                 {
-                    Toast.MakeText(this, "אנא השלם את כל השדות", ToastLength.Short).Show();
+                    Android.Widget.Toast.MakeText(this, "אנא השלם את כל השדות", ToastLength.Short).Show();
                     return;
                 }
-
-                // Update the state object (ActiveBus model)
                 state.TripData.SchoolName = autoSchool.Text;
                 state.TripData.Town = autoTown.Text;
                 state.TripData.BusLine = autoBus.Text;
-
-                RenderCards(); // Refresh dashboard
+                RenderCards();
                 dialog.Dismiss();
             };
 
             dialog.Show();
         }
-        private void ConfigureSearchableField(AutoCompleteTextView view)
-        {
-            view.Threshold = 1;
-            view.Click += (s, e) => view.ShowDropDown();
-            view.FocusChange += (s, e) => { if (e.HasFocus) view.ShowDropDown(); };
-        }
-        private void SetDialogFieldEnabled(AutoCompleteTextView view, bool isEnabled)
-        {
-            view.Enabled = isEnabled;
-            view.Alpha = isEnabled ? 1.0f : 0.5f;
 
-            var parent = view.Parent.Parent as TextInputLayout;
-            if (parent != null)
-            {
-                parent.Enabled = isEnabled;
-            }
-        }
         #endregion
 
-        #region Location Listener Implementation
+        #region Location Listener
 
         public void OnLocationChanged(Location location)
         {
@@ -291,51 +245,49 @@ namespace TimeToSchool
 
         public void OnProviderDisabled(string provider) { }
         public void OnProviderEnabled(string provider) { }
-        public void OnStatusChanged(string provider, Availability status, Bundle extras) { }
+        public void OnStatusChanged(string provider, Availability status, Android.OS.Bundle extras) { }
 
         #endregion
 
         private void CheckAndRequestLocationPermission()
         {
             if (CheckSelfPermission(Android.Manifest.Permission.AccessFineLocation) != Permission.Granted)
-            {
                 RequestPermissions(new string[] { Android.Manifest.Permission.AccessFineLocation }, REQUEST_LOCATION_ID);
-            }
         }
-        public List<string> GetSchools(List<BusRoute> _allRoutes)
+
+        private ArrayAdapter<string> CreateAdapter(string[] data) =>
+            new ArrayAdapter<string>(this, Resource.Layout.dropdown_item, data);
+
+        private void ConfigureSearchableField(AutoCompleteTextView view)
         {
-            return _allRoutes.Select(r => r.School)
-                             .Distinct()
-                             .OrderBy(s => s)
-                             .ToList();
+            view.Threshold = 1;
+            view.Click += (s, e) => view.ShowDropDown();
+            view.FocusChange += (s, e) => { if (e.HasFocus) view.ShowDropDown(); };
         }
 
-        public List<string> GetTownsForSchool(List<BusRoute> _allRoutes, string schoolName)
+        private void SetDialogFieldEnabled(AutoCompleteTextView view, bool isEnabled)
         {
-            return _allRoutes.Where(r => r.School == schoolName)
-                             .Select(r => r.Town)
-                             .Distinct()
-                             .OrderBy(t => t)
-                             .ToList();
+            view.Enabled = isEnabled;
+            view.Alpha = isEnabled ? 1.0f : 0.5f;
+            if (view.Parent?.Parent is TextInputLayout layout)
+                layout.Enabled = isEnabled;
         }
 
-        public List<string> GetBusesForRoute(List<BusRoute> _allRoutes, string school, string town)
-        {
-            var buses = _allRoutes.Where(r => r.School == school && r.Town == town)
-                                  .Select(r => r.BusLine)
-                                  .OrderBy(b => b)
-                                  .ToList();
+        public List<string> GetSchools(List<BusRoute> routes) =>
+            routes.Select(r => r.School).Distinct().OrderBy(s => s).ToList();
 
+        public List<string> GetTownsForSchool(List<BusRoute> routes, string school) =>
+            routes.Where(r => r.School == school).Select(r => r.Town).Distinct().OrderBy(t => t).ToList();
 
-            return buses;
-        }
+        public List<string> GetBusesForRoute(List<BusRoute> routes, string school, string town) =>
+            routes.Where(r => r.School == school && r.Town == town).Select(r => r.BusLine).OrderBy(b => b).ToList();
     }
 
     public class DriverCardState
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
-        public string FirebaseDocumentId { get; set; } // To track the live trip doc
-        public ActiveBus TripData { get; set; } // Your existing model
+        public string FirebaseDocumentId { get; set; }
+        public ActiveBus TripData { get; set; }
         public bool IsDriving { get; set; } = false;
     }
 }
