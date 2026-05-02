@@ -216,6 +216,12 @@
     </AndroidResource>
     <AndroidResource Include="Resources\menu\nav_drawer_menu.xml" />
     <AndroidResource Include="Resources\menu\driver_menu.xml" />
+    <AndroidResource Include="Resources\drawable\ic_arrow_left.xml" />
+    <AndroidResource Include="Resources\drawable\ic_arrow_right.xml" />
+    <AndroidResource Include="Resources\drawable\shape_avatar_bg.xml" />
+    <AndroidResource Include="Resources\layout\dialog_edit_user.xml">
+      <SubType>Designer</SubType>
+    </AndroidResource>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

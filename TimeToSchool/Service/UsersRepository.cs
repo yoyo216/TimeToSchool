@@ -202,6 +202,7 @@ namespace TimeToSchool.Service
                 await userRef.Update("FirstName", user.FirstName);
                 await userRef.Update("LastName", user.LastName);
                 await userRef.Update("UserMobile", user.UserMobile);
+                await userRef.Update("IsAdmin", user.IsAdmin);
 
                 Log.Debug(ProManager.TAG, $"FirebaseHelper: Update {user.UserEmail} success");
             }

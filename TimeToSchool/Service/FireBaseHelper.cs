@@ -109,10 +109,11 @@ namespace TimeToSchool.Service
             public class TaskListenerEventArgs : EventArgs
             {
                 public Java.Lang.Object Result { get; set; }
+                public FirebaseFirestoreException Error { get; set; }
             }
             public void OnEvent(Java.Lang.Object obj, FirebaseFirestoreException error)
             {
-                getEvent?.Invoke(this, new TaskListenerEventArgs { Result = obj });
+                getEvent?.Invoke(this, new TaskListenerEventArgs { Result = obj, Error = error });
             }
         }
     }
