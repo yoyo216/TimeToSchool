@@ -15,6 +15,7 @@ namespace TimeToSchool
     {
         EditText _firstName, _lastName, _userEmail, _userPassword, _userMobile;
         Button _btnSignUp;
+        CheckBox _cbRememberMe;
         Dialog mProgressDialog;
         Model.User _user;
 
@@ -33,6 +34,7 @@ namespace TimeToSchool
             _userEmail = FindViewById<EditText>(Resource.Id.et_email);
             _userPassword = FindViewById<EditText>(Resource.Id.et_password);
             _userMobile = FindViewById<EditText>(Resource.Id.et_mobile);
+            _cbRememberMe = FindViewById<CheckBox>(Resource.Id.cbRememberMeSignUp);
             _btnSignUp = FindViewById<Button>(Resource.Id.btn_register);
 
 
@@ -68,7 +70,10 @@ namespace TimeToSchool
                 Toast.MakeText(this, $"SignUp succeeded!", ToastLength.Short).Show();
 
                 ProManager.CurrentUser = _user;
-                StartActivity(typeof(AdminMainActivity));
+                if (_cbRememberMe.Checked)
+                    new PreferenceService(this).SaveUserObject(_user);
+                StartActivity(typeof(DriverActivity));
+                Finish();
             }
             catch (Exception)
             {
@@ -107,7 +112,7 @@ namespace TimeToSchool
             {
                 mProgressDialog = new Dialog(this, Android.Resource.Style.ThemeNoTitleBar);
                 View view = LayoutInflater.From(this).Inflate(Resource.Layout.fb_progressbar, null);
-                mProgressDialog.Window.SetBackgroundDrawableResource(Resource.Color.mtrl_btn_transparent_bg_color);
+                mProgressDialog.Window.SetBackgroundDrawable(new Android.Graphics.Drawables.ColorDrawable(Android.Graphics.Color.Transparent));
                 mProgressDialog.SetContentView(view);
                 mProgressDialog.SetCancelable(false);
                 mProgressDialog.Show();

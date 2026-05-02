@@ -310,7 +310,7 @@ namespace TimeToSchool.Fragments
             {
                 _progressDialog = new Dialog(Activity, Android.Resource.Style.ThemeNoTitleBar);
                 var v = LayoutInflater.From(Activity).Inflate(Resource.Layout.fb_progressbar, null);
-                _progressDialog.Window.SetBackgroundDrawableResource(Resource.Color.mtrl_btn_transparent_bg_color);
+                _progressDialog.Window.SetBackgroundDrawable(new Android.Graphics.Drawables.ColorDrawable(Android.Graphics.Color.Transparent));
                 _progressDialog.SetContentView(v);
                 _progressDialog.SetCancelable(false);
                 _progressDialog.Show();

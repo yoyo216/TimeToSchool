@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\" -Force)",
+      "Bash(Select-Object Name, Mode)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\\\\TimeToSchool\" -Recurse -Force -Directory | Select-Object FullName | ForEach-Object { $_.FullName.Replace\\('C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\\\\TimeToSchool', ''\\) } | Sort-Object)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\" -Recurse -Force)",
+      "Bash(Select-Object -First 50)",
+      "Bash(Format-Table FullName)",
+      "Bash(git push *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\" -Recurse -Filter \"*.cs\")",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\\\\TimeToSchool\\\\Resources\\\\drawable\\\\\" | Where-Object { $_.Extension -eq \".xml\" } | Select-Object Name)",
+      "PowerShell(Get-ChildItem *)",
+      "Bash(adb devices *)",
+      "PowerShell(adb devices *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\" -Filter \"*.cs\")",
+      "Bash(Select-Object FullName)",
+      "PowerShell(head *)",
+      "Bash(Get-ChildItem *)"
+    ]
+  }
+}

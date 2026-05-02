@@ -3,7 +3,6 @@ using Android.OS;
 using AndroidX.Fragment.App;
 using Google.Android.Material.Tabs;
 using TimeToSchool.Fragments;
-using FragmentTransaction = AndroidX.Fragment.App.FragmentTransaction;
 
 namespace TimeToSchool
 {
@@ -11,6 +10,8 @@ namespace TimeToSchool
     public class AdminMainActivity : BaseDrawerActivity
     {
         private TabLayout _tabLayout;
+        private readonly UsersManagementFragment _usersFragment = new UsersManagementFragment();
+        private readonly BusesManagementFragment _busesFragment = new BusesManagementFragment();
 
         protected override int GetContentLayoutId() => Resource.Layout.adminpage_layout;
 
@@ -20,23 +21,23 @@ namespace TimeToSchool
             _tabLayout.TabSelected += OnTabSelected;
 
             if (savedInstanceState == null)
-                ReplaceFragment(new UsersManagementFragment());
+            {
+                SupportFragmentManager.BeginTransaction()
+                    .Add(Resource.Id.adminFragmentContainer, _busesFragment)
+                    .Add(Resource.Id.adminFragmentContainer, _usersFragment)
+                    .Hide(_busesFragment)
+                    .Commit();
+            }
         }
 
         private void OnTabSelected(object sender, TabLayout.TabSelectedEventArgs e)
         {
-            switch (e.Tab.Position)
-            {
-                case 0: ReplaceFragment(new UsersManagementFragment()); break;
-                case 1: ReplaceFragment(new BusesManagementFragment()); break;
-            }
-        }
+            var show = e.Tab.Position == 0 ? (AndroidX.Fragment.App.Fragment)_usersFragment : _busesFragment;
+            var hide = e.Tab.Position == 0 ? (AndroidX.Fragment.App.Fragment)_busesFragment : _usersFragment;
 
-        private void ReplaceFragment(AndroidX.Fragment.App.Fragment fragment)
-        {
             SupportFragmentManager.BeginTransaction()
-                .Replace(Resource.Id.adminFragmentContainer, fragment)
-                .SetTransition(FragmentTransaction.TransitFragmentFade)
+                .Show(show)
+                .Hide(hide)
                 .Commit();
         }
     }

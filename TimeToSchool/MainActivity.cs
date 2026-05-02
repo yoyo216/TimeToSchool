@@ -66,8 +66,8 @@ namespace TimeToSchool
         {
             try
             {
-                _allRoutes = await BusesRepository.GetBusesCollection();
                 InitViews();
+                _allRoutes = await BusesRepository.GetBusesCollection();
                 SetupAdapters();
                 SetupDropdownBehavior();
                 SetupEvents();

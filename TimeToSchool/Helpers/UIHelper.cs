@@ -42,7 +42,7 @@ namespace TimeToSchool.Helpers
         {
             Dialog dialog = new Dialog(activity, Android.Resource.Style.ThemeNoTitleBar);
             View view = LayoutInflater.From(activity).Inflate(Resource.Layout.fb_progressbar, null);
-            dialog.Window.SetBackgroundDrawableResource(Resource.Color.mtrl_btn_transparent_bg_color);
+            dialog.Window.SetBackgroundDrawable(new Android.Graphics.Drawables.ColorDrawable(Color.Transparent));
             dialog.SetContentView(view);
             dialog.SetCancelable(false);
             return dialog;
