@@ -66,6 +66,7 @@
   <ItemGroup>
     <Compile Include="Adapter\BusPagerAdapter.cs" />
     <Compile Include="Adapter\BusRViewAdapter.cs" />
+    <Compile Include="Adapter\DriverCardAdapter.cs" />
     <Compile Include="Adapter\UsersRViewAdapter.cs" />
     <Compile Include="Adapter\UserViewHolder.cs.cs" />
     <Compile Include="AdminMainActivity.cs" />

@@ -4,20 +4,13 @@
     android:layout_height="match_parent"
     android:background="#F5F5F5">
 
-    <ScrollView
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/cardsContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/globalStatusText"
         android:padding="10dp"
-        android:clipToPadding="false">
-
-        <LinearLayout
-            android:id="@+id/cardsContainer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" />
-
-    </ScrollView>
+        android:clipToPadding="false" />
 
     <TextView
         android:id="@+id/globalStatusText"
