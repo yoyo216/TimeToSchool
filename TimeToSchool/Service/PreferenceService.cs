@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using TimeToSchool;
 using TimeToSchool.Model;
 
 namespace TimeToSchool.Service
@@ -48,6 +49,27 @@ namespace TimeToSchool.Service
             if (userJson == null) return null;
             return JsonConvert.DeserializeObject<User>(userJson);
         }
+        private const string DRIVER_CARDS_KEY = "driver_cards_json";
+
+        public void SaveDriverCards(List<DriverCardState> cards)
+        {
+            var snapshot = cards.Select(c => new DriverCardState
+            {
+                Id = c.Id,
+                FirebaseDocumentId = c.FirebaseDocumentId,
+                TripData = c.TripData,
+                IsDriving = false
+            }).ToList();
+            _prefs.Edit().PutString(DRIVER_CARDS_KEY, JsonConvert.SerializeObject(snapshot)).Apply();
+        }
+
+        public List<DriverCardState> GetDriverCards()
+        {
+            string json = _prefs.GetString(DRIVER_CARDS_KEY, null);
+            if (json == null) return null;
+            return JsonConvert.DeserializeObject<List<DriverCardState>>(json);
+        }
+
         public void ClearSession()
         {
             _prefs.Edit().Clear().Apply();

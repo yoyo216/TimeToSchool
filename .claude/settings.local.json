@@ -16,7 +16,9 @@
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\" -Filter \"*.cs\")",
       "Bash(Select-Object FullName)",
       "PowerShell(head *)",
-      "Bash(Get-ChildItem *)"
+      "Bash(Get-ChildItem *)",
+      "Bash(Select-String -Pattern \"\\(PreferenceService|ProManager|BusesRepository|BusRoute|ActiveBus\\)\")",
+      "Bash(Select-Object -ExpandProperty FullName)"
     ]
   }
 }

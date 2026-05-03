@@ -85,6 +85,8 @@ namespace TimeToSchool
 
             SetFieldEnabled(autoTown, false);
             SetFieldEnabled(autoBus, false);
+            ValidateFields();
+
         }
 
         private void SetupAdapters()

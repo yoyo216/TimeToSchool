@@ -14,7 +14,7 @@ using TimeToSchool.Service;
 
 namespace TimeToSchool
 {
-    [Activity(Label = "Driver Console", MainLauncher = false)]
+    [Activity(Label = "Driver Console", MainLauncher = false)]  
     public class DriverActivity : BaseDrawerActivity, ILocationListener
     {
         private const int REQUEST_LOCATION_ID = 1001;
@@ -23,6 +23,7 @@ namespace TimeToSchool
         private TextView globalStatusText;
 
         private LocationManager locManager;
+        private PreferenceService _prefService;
         private List<DriverCardState> _driverCards = new List<DriverCardState>();
         private List<BusRoute> _allRoutes;
         private bool _isGlobalDriving = false;
@@ -53,6 +54,7 @@ namespace TimeToSchool
                     return true;
                 }
                 _driverCards.Add(new DriverCardState { TripData = new ActiveBus() });
+                SaveCardsIfRemembered();
                 RenderCards();
                 return true;
             }
@@ -68,13 +70,31 @@ namespace TimeToSchool
         private void SetupServices()
         {
             locManager = (LocationManager)GetSystemService(LocationService);
+            _prefService = new PreferenceService(this);
+        }
+
+        private bool IsRememberMeActive() => _prefService.GetSavedUser() != null;
+
+        private void SaveCardsIfRemembered()
+        {
+            if (IsRememberMeActive())
+                _prefService.SaveDriverCards(_driverCards);
+        }
+
+        protected override void OnPause()
+        {
+            base.OnPause();
+            SaveCardsIfRemembered();
         }
 
         private async void LoadInitialData()
         {
             _allRoutes = await BusesRepository.GetBusesCollection();
 
-            if (_driverCards.Count == 0)
+            var savedCards = _prefService.GetDriverCards();
+            if (savedCards != null && savedCards.Count > 0)
+                _driverCards = savedCards;
+            else if (_driverCards.Count == 0)
                 _driverCards.Add(new DriverCardState { TripData = new ActiveBus() });
 
             RenderCards();
@@ -221,6 +241,7 @@ namespace TimeToSchool
                 state.TripData.SchoolName = autoSchool.Text;
                 state.TripData.Town = autoTown.Text;
                 state.TripData.BusLine = autoBus.Text;
+                SaveCardsIfRemembered();
                 RenderCards();
                 dialog.Dismiss();
             };
