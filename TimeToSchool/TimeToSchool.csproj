@@ -64,6 +64,7 @@
     <Reference Include="System.Numerics.Vectors" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Adapter\ActiveBusViewAdapter.cs" />
     <Compile Include="Adapter\BusPagerAdapter.cs" />
     <Compile Include="Adapter\BusRViewAdapter.cs" />
     <Compile Include="Adapter\DriverCardAdapter.cs" />
@@ -201,6 +202,12 @@
       <SubType>Designer</SubType>
     </AndroidResource>
     <AndroidResource Include="Resources\layout\bus_item_card.xml">
+      <SubType>Designer</SubType>
+    </AndroidResource>
+    <AndroidResource Include="Resources\layout\active_bus_item_card.xml">
+      <SubType>Designer</SubType>
+    </AndroidResource>
+    <AndroidResource Include="Resources\layout\fragment_active_buses.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
     <AndroidResource Include="Resources\layout\driver_route_item.xml">

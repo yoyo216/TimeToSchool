@@ -24,6 +24,9 @@ namespace TimeToSchool.Service
         public static IListenerRegistration BusRegistration;
         public static FirestoreEventListener BusEventListener;
 
+        public static IListenerRegistration ActiveTripsRegistration;
+        public static FirestoreEventListener ActiveTripsEventListener;
+
         // Starts a real-time listener for the BusRoutes collection
         public static void FetchBusesListener()
         {
@@ -39,6 +42,24 @@ namespace TimeToSchool.Service
             BusRegistration?.Remove();
             BusRegistration = null;
             BusEventListener = null;
+        }
+
+        // Starts a real-time listener for today's ActiveTrips (both Active and Inactive)
+        public static void FetchActiveBusesListenerForToday()
+        {
+            string today = DateTime.Now.ToString("yyyy-MM-dd");
+            ActiveTripsEventListener = new FirestoreEventListener();
+            ActiveTripsRegistration = FirebaseFirestore.Instance
+                .Collection("ActiveTrips")
+                .WhereEqualTo("date", today)
+                .AddSnapshotListener(ActiveTripsEventListener);
+        }
+
+        public static void StopActiveBusesListener()
+        {
+            ActiveTripsRegistration?.Remove();
+            ActiveTripsRegistration = null;
+            ActiveTripsEventListener = null;
         }
         public static async Task<bool> UpdateBus(BusRoute bus)
         {

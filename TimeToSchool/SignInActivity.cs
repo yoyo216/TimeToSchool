@@ -17,7 +17,7 @@ using TimeToSchool.Service;
 
 namespace TimeToSchool
 {
-    [Activity(Label = "Sign In", Name = "com.companyname.timetoschool.SignInActivity", MainLauncher = true)]
+    [Activity(Label = "Sign In", Name = "com.companyname.timetoschool.SignInActivity", MainLauncher = false)]
     public class SignInActivity : AppCompatActivity, View.IOnClickListener
     {
         private EditText etEmail, etPass;

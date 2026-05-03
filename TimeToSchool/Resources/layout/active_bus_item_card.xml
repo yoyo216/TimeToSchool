@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginVertical="4dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="3dp">
+
+	<RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="12dp">
+
+		<TextView
+            android:id="@+id/tvStatusBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="4dp"
+            android:background="#4CAF50"
+            android:text="פעיל"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+		<LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_toLeftOf="@id/tvStatusBadge"
+            android:orientation="vertical">
+
+			<TextView
+                android:id="@+id/tvBusLineName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="קו 102"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#1976D2" />
+
+			<TextView
+                android:id="@+id/tvDetails"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ביה''ס שרת | נתניה"
+                android:textSize="14sp"
+                android:textColor="#424242" />
+
+			<TextView
+                android:id="@+id/tvDriver"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="נהג: יואב"
+                android:textSize="13sp"
+                android:textColor="#616161"
+                android:layout_marginTop="2dp" />
+		</LinearLayout>
+
+	</RelativeLayout>
+</androidx.cardview.widget.CardView>

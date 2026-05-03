@@ -1,32 +1,95 @@
-﻿using Android.App;
-using Android.Content;
 using Android.OS;
-using Android.Runtime;
-using Android.Util;
 using Android.Views;
 using Android.Widget;
-using System;
+using AndroidX.RecyclerView.Widget;
+using Firebase.Firestore;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using TimeToSchool.Adapter;
+using TimeToSchool.Model;
+using TimeToSchool.Service;
+using static TimeToSchool.Service.FireBaseHelper;
 
 namespace TimeToSchool.Fragments
 {
     public class ActiveBusesFragment : AndroidX.Fragment.App.Fragment
     {
-        public override void OnCreate(Bundle savedInstanceState)
-        {
-            base.OnCreate(savedInstanceState);
-
-            // Create your fragment here
-        }
+        private RecyclerView _recyclerView;
+        private TextView _emptyView;
+        private ActiveBusViewAdapter _adapter;
+        private List<ActiveBus> _activeBuses;
 
         public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            // Use this to return your custom view for this Fragment
-            // return inflater.Inflate(Resource.Layout.YourFragment, container, false);
+            View view = inflater.Inflate(Resource.Layout.fragment_active_buses, container, false);
+            InitViews(view);
+            SetupRecyclerView();
+            LoadActiveBusData();
+            return view;
+        }
 
-            return base.OnCreateView(inflater, container, savedInstanceState);
+        private void InitViews(View view)
+        {
+            _recyclerView = view.FindViewById<RecyclerView>(Resource.Id.rvActiveBuses);
+            _emptyView = view.FindViewById<TextView>(Resource.Id.tvActiveBusesEmpty);
+        }
+
+        private void SetupRecyclerView()
+        {
+            _activeBuses = new List<ActiveBus>();
+            _recyclerView.SetLayoutManager(new LinearLayoutManager(Context));
+            _adapter = new ActiveBusViewAdapter(_activeBuses);
+            _recyclerView.SetAdapter(_adapter);
+        }
+
+        private void LoadActiveBusData()
+        {
+            BusesRepository.FetchActiveBusesListenerForToday();
+            BusesRepository.ActiveTripsEventListener.getEvent += OnActiveBusesChanged;
+        }
+
+        private void OnActiveBusesChanged(object sender, FirestoreEventListener.TaskListenerEventArgs e)
+        {
+            var snapshot = e.Result as QuerySnapshot;
+            if (snapshot == null) return;
+
+            _activeBuses.Clear();
+            foreach (DocumentSnapshot item in snapshot.Documents)
+            {
+                _activeBuses.Add(new ActiveBus
+                {
+                    SchoolName = item.Get("schoolName")?.ToString(),
+                    Town = item.Get("town")?.ToString(),
+                    BusLine = item.Get("busLine")?.ToString(),
+                    DriverName = item.Get("driverName")?.ToString(),
+                    DriverId = item.Get("driverId")?.ToString(),
+                    Status = item.Get("status")?.ToString(),
+                    Date = item.Get("date")?.ToString()
+                });
+            }
+
+            var sorted = _activeBuses
+                .OrderByDescending(b => b.Status == "Active")
+                .ThenBy(b => b.BusLine)
+                .ToList();
+            _activeBuses.Clear();
+            _activeBuses.AddRange(sorted);
+
+            Activity?.RunOnUiThread(() =>
+            {
+                _adapter.NotifyDataSetChanged();
+                _emptyView.Visibility = _activeBuses.Count == 0 ? ViewStates.Visible : ViewStates.Gone;
+            });
+        }
+
+        public override void OnDestroyView()
+        {
+            if (BusesRepository.ActiveTripsEventListener != null)
+            {
+                BusesRepository.ActiveTripsEventListener.getEvent -= OnActiveBusesChanged;
+            }
+            BusesRepository.StopActiveBusesListener();
+            base.OnDestroyView();
         }
     }
 }

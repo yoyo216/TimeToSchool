@@ -18,7 +18,22 @@
       "PowerShell(head *)",
       "Bash(Get-ChildItem *)",
       "Bash(Select-String -Pattern \"\\(PreferenceService|ProManager|BusesRepository|BusRoute|ActiveBus\\)\")",
-      "Bash(Select-Object -ExpandProperty FullName)"
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(msbuild TimeToSchool/TimeToSchool.csproj /p:Configuration=Debug /t:Build /v:minimal)",
+      "PowerShell(Get-Command *)",
+      "PowerShell($msbuild = \"${env:ProgramFiles}\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\"; cd \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\"; & $msbuild TimeToSchool/TimeToSchool.csproj /p:Configuration=Debug /t:Build /v:minimal 2>&1 | Select-Object -Last 50)",
+      "PowerShell($msbuild = \"${env:ProgramFiles}\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\"; cd \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\"; & $msbuild TimeToSchool/TimeToSchool.csproj /p:Configuration=Debug /t:Build /v:minimal 2>&1 | Select-Object -Last 30)",
+      "PowerShell($msbuild = \"${env:ProgramFiles}\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\"; cd \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\"; & $msbuild TimeToSchool/TimeToSchool.csproj /p:Configuration=Debug /t:Build /v:minimal 2>&1 | Select-Object -Last 20)",
+      "PowerShell($msbuild = \"${env:ProgramFiles}\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\"; cd \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\"; & $msbuild TimeToSchool/TimeToSchool.csproj /p:Configuration=Debug /t:Install /p:AdbTarget=\"-s R5CTB1SG2LT\" /v:minimal 2>&1 | Select-Object -Last 20)",
+      "PowerShell($msbuild = \"${env:ProgramFiles}\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\"; $adb = \"${env:LOCALAPPDATA}\\\\Android\\\\Sdk\\\\platform-tools\\\\adb.exe\"; cd \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\"; & $msbuild TimeToSchool/TimeToSchool.csproj /p:Configuration=Debug /t:Build /v:minimal 2>&1 | Select-String \"error|warning CS|Build succeeded|FAILED\" | Select-Object -Last 10)",
+      "PowerShell($msbuild = \"${env:ProgramFiles}\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\"; cd \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\"; & $msbuild TimeToSchool/TimeToSchool.csproj /p:Configuration=Debug /t:Build /v:minimal 2>&1 | Select-Object -Last 3)",
+      "PowerShell($msbuild = \"${env:ProgramFiles}\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\"; $adb = \"C:\\\\Program Files \\(x86\\)\\\\Android\\\\android-sdk\\\\platform-tools\\\\adb.exe\"; cd \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\"; & $msbuild TimeToSchool/TimeToSchool.csproj /p:Configuration=Debug /t:Build /v:minimal 2>&1 | Select-Object -Last 5)",
+      "PowerShell(& \"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\" \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\\\\TimeToSchool\\\\TimeToSchool.csproj\" /p:Configuration=Debug /t:Build /v:minimal 2>&1 | Select-Object -Last 60)",
+      "PowerShell(& \"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\" \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\\\\TimeToSchool\\\\TimeToSchool.csproj\" /p:Configuration=Debug /t:Build /v:minimal 2>&1 | Select-Object -Last 30)",
+      "PowerShell(& \"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\" \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\\\\TimeToSchool\\\\TimeToSchool.csproj\" /p:Configuration=Debug /t:Install /p:AdbTarget=\"-s R5CTB1SG2LT\" /v:minimal 2>&1 | Select-Object -Last 20)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(Select-Object -First 20)"
     ]
   }
 }
