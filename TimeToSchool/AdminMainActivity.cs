@@ -1,8 +1,10 @@
 using Android.App;
 using Android.OS;
+using Android.Views;
 using AndroidX.Fragment.App;
 using Google.Android.Material.Tabs;
 using TimeToSchool.Fragments;
+using TimeToSchool.Helpers;
 
 namespace TimeToSchool
 {
@@ -39,6 +41,12 @@ namespace TimeToSchool
                 .Show(show)
                 .Hide(hide)
                 .Commit();
+        }
+
+        public override bool DispatchTouchEvent(MotionEvent ev)
+        {
+            UIHelper.HandleOutsideTouch(this, ev);
+            return base.DispatchTouchEvent(ev);
         }
     }
 }

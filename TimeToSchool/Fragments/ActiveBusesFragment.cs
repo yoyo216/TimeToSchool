@@ -3,6 +3,7 @@ using Android.Views;
 using Android.Widget;
 using AndroidX.RecyclerView.Widget;
 using Firebase.Firestore;
+using Google.Android.Material.TextField;
 using System.Collections.Generic;
 using System.Linq;
 using TimeToSchool.Adapter;
@@ -16,8 +17,10 @@ namespace TimeToSchool.Fragments
     {
         private RecyclerView _recyclerView;
         private TextView _emptyView;
+        private TextInputEditText _etSearch;
         private ActiveBusViewAdapter _adapter;
-        private List<ActiveBus> _activeBuses;
+        private List<ActiveBus> _allBuses;
+        private List<ActiveBus> _displayedBuses;
 
         public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
@@ -32,13 +35,16 @@ namespace TimeToSchool.Fragments
         {
             _recyclerView = view.FindViewById<RecyclerView>(Resource.Id.rvActiveBuses);
             _emptyView = view.FindViewById<TextView>(Resource.Id.tvActiveBusesEmpty);
+            _etSearch = view.FindViewById<TextInputEditText>(Resource.Id.etActiveBusesSearch);
+            _etSearch.TextChanged += (s, e) => ApplyFilter();
         }
 
         private void SetupRecyclerView()
         {
-            _activeBuses = new List<ActiveBus>();
+            _allBuses = new List<ActiveBus>();
+            _displayedBuses = new List<ActiveBus>();
             _recyclerView.SetLayoutManager(new LinearLayoutManager(Context));
-            _adapter = new ActiveBusViewAdapter(_activeBuses);
+            _adapter = new ActiveBusViewAdapter(_displayedBuses);
             _recyclerView.SetAdapter(_adapter);
         }
 
@@ -53,10 +59,10 @@ namespace TimeToSchool.Fragments
             var snapshot = e.Result as QuerySnapshot;
             if (snapshot == null) return;
 
-            _activeBuses.Clear();
+            _allBuses.Clear();
             foreach (DocumentSnapshot item in snapshot.Documents)
             {
-                _activeBuses.Add(new ActiveBus
+                _allBuses.Add(new ActiveBus
                 {
                     SchoolName = item.Get("schoolName")?.ToString(),
                     Town = item.Get("town")?.ToString(),
@@ -68,18 +74,33 @@ namespace TimeToSchool.Fragments
                 });
             }
 
-            var sorted = _activeBuses
+            Activity?.RunOnUiThread(ApplyFilter);
+        }
+
+        private void ApplyFilter()
+        {
+            if (_allBuses == null || _displayedBuses == null) return;
+
+            string query = _etSearch?.Text?.Trim().ToLower() ?? string.Empty;
+
+            IEnumerable<ActiveBus> filtered = _allBuses;
+            if (!string.IsNullOrEmpty(query))
+            {
+                filtered = filtered.Where(b =>
+                    (b.Town?.ToLower().Contains(query) == true) ||
+                    (b.SchoolName?.ToLower().Contains(query) == true) ||
+                    (b.DriverName?.ToLower().Contains(query) == true));
+            }
+
+            var sorted = filtered
                 .OrderByDescending(b => b.Status == "Active")
                 .ThenBy(b => b.BusLine)
                 .ToList();
-            _activeBuses.Clear();
-            _activeBuses.AddRange(sorted);
 
-            Activity?.RunOnUiThread(() =>
-            {
-                _adapter.NotifyDataSetChanged();
-                _emptyView.Visibility = _activeBuses.Count == 0 ? ViewStates.Visible : ViewStates.Gone;
-            });
+            _displayedBuses.Clear();
+            _displayedBuses.AddRange(sorted);
+            _adapter.NotifyDataSetChanged();
+            _emptyView.Visibility = _displayedBuses.Count == 0 ? ViewStates.Visible : ViewStates.Gone;
         }
 
         public override void OnDestroyView()

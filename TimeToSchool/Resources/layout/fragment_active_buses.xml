@@ -1,21 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#F5F5F5">
 
-	<androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvActiveBuses"
+	<com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/layoutActiveBusesSearch"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="8dp" />
-
-	<TextView
-        android:id="@+id/tvActiveBusesEmpty"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:text="אין נסיעות להיום"
-        android:textSize="16sp"
-        android:textColor="#9E9E9E"
-        android:visibility="gone" />
-</FrameLayout>
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="4dp"
+        app:startIconDrawable="@android:drawable/ic_menu_search"
+        app:boxBackgroundColor="@android:color/white">
+
+		<com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etActiveBusesSearch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="חיפוש לפי עיר, בית ספר או נהג"
+            android:inputType="text"
+            android:imeOptions="actionSearch"
+            android:maxLines="1" />
+
+	</com.google.android.material.textfield.TextInputLayout>
+
+	<FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+		<androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvActiveBuses"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="8dp" />
+
+		<TextView
+            android:id="@+id/tvActiveBusesEmpty"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="אין נסיעות להיום"
+            android:textSize="16sp"
+            android:textColor="#9E9E9E"
+            android:visibility="gone" />
+	</FrameLayout>
+
+</LinearLayout>
