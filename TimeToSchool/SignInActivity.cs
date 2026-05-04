@@ -85,32 +85,18 @@ namespace TimeToSchool
             if (userfromDB != null)
             {
                 ProManager.CurrentUser = userfromDB;
-                string role = userfromDB.IsAdmin ? "Admin" : "Driver";
 
-                // FIX: Handle the Remember Me saving here
                 if (cbRememberMe.Checked)
                 {
                     _prefService.SaveUserObject(userfromDB);
                 }
 
-                NavigateByRole(role);
+                RoleRouter.RouteFor(this, userfromDB);
             }
             else
             {
                 Toast.MakeText(this, "Failed to get user profile", ToastLength.Short).Show();
             }
-        }
-
-        private void NavigateByRole(string role)
-        {
-            Intent intent;
-            if (role == "Admin")
-                intent = new Intent(this, typeof(AdminMainActivity));
-            else
-                intent = new Intent(this, typeof(DriverActivity));
-
-            StartActivity(intent);
-            Finish(); // Ensures user can't go back to Login
         }
 
         public void OnClick(View v)

@@ -65,9 +65,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Adapter\ActiveBusViewAdapter.cs" />
+    <Compile Include="Adapter\BannedEmailsRViewAdapter.cs" />
     <Compile Include="Adapter\BusPagerAdapter.cs" />
     <Compile Include="Adapter\BusRViewAdapter.cs" />
     <Compile Include="Adapter\DriverCardAdapter.cs" />
+    <Compile Include="Adapter\PendingRequestsRViewAdapter.cs" />
     <Compile Include="Adapter\UsersRViewAdapter.cs" />
     <Compile Include="Adapter\UserViewHolder.cs.cs" />
     <Compile Include="AdminMainActivity.cs" />
@@ -75,18 +77,26 @@
     <Compile Include="DriverActivity.cs" />
     <Compile Include="Fragments\ActiveBusesFragment.cs" />
     <Compile Include="Fragments\AllBusesFragment.cs" />
+    <Compile Include="Fragments\BannedUsersFragment.cs" />
     <Compile Include="Fragments\BusesManagementFragment.cs" />
     <Compile Include="Fragments\CreateBusDialogFragment.cs" />
+    <Compile Include="Fragments\PendingRequestsFragment.cs" />
     <Compile Include="Fragments\UsersManagementFragment.cs" />
+    <Compile Include="Helpers\RoleRouter.cs" />
     <Compile Include="Helpers\UIHelper.cs" />
     <Compile Include="Model\ActiveBus.cs" />
+    <Compile Include="Model\BannedEmail.cs" />
     <Compile Include="Model\BusRoute.cs" />
+    <Compile Include="Model\DriverCardState.cs" />
     <Compile Include="Model\User.cs" />
+    <Compile Include="PendingApprovalActivity.cs" />
+    <Compile Include="Service\BannedEmailsRepository.cs" />
     <Compile Include="Service\BusesRepository.cs" />
     <Compile Include="MainActivity.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Helpers\SelectionValidator.cs" />
+    <Compile Include="Service\DataService.cs" />
     <Compile Include="Service\FireBaseHelper.cs" />
     <Compile Include="Service\PreferenceService.cs" />
     <Compile Include="Service\UsersRepository.cs" />
@@ -230,6 +240,11 @@
     <AndroidResource Include="Resources\layout\dialog_edit_user.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
+    <AndroidResource Include="Resources\layout\banned_email_item.xml" />
+    <AndroidResource Include="Resources\layout\fragment_banned_users.xml" />
+    <AndroidResource Include="Resources\layout\fragment_pending_requests.xml" />
+    <AndroidResource Include="Resources\layout\pending_approval_layout.xml" />
+    <AndroidResource Include="Resources\layout\pending_request_item.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

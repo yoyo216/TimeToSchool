@@ -21,5 +21,6 @@ namespace TimeToSchool.Model
         public string UserMobile { get; set; }
         public int ImageId { get; set; }
         public bool IsAdmin { get; set; } = false;
+        public string Status { get; set; } = "pending";
     }
 }

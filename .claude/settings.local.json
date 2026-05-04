@@ -33,7 +33,8 @@
       "PowerShell(& \"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\" \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\\\\TimeToSchool\\\\TimeToSchool.csproj\" /p:Configuration=Debug /t:Install /p:AdbTarget=\"-s R5CTB1SG2LT\" /v:minimal 2>&1 | Select-Object -Last 20)",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(Select-Object -First 20)"
+      "Bash(Select-Object -First 20)",
+      "Bash(Select-Object -First 50 FullName)"
     ]
   }
 }

@@ -50,10 +50,7 @@ namespace TimeToSchool
                 if (savedUser != null)
                 {
                     ProManager.CurrentUser = savedUser;
-                    if (savedUser.IsAdmin)
-                        StartActivity(typeof(AdminMainActivity));
-                    else
-                        StartActivity(typeof(DriverActivity));
+                    RoleRouter.RouteFor(this, savedUser, finishCaller: false);
                 }
             }
             catch (Exception)

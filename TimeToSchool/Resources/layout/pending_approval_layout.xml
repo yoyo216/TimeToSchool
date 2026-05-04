@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="32dp"
+    android:background="#F5F5F5">
+
+    <ImageView
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        android:src="@android:drawable/ic_dialog_info"
+        android:tint="#1565C0"
+        android:contentDescription="Pending approval" />
+
+    <TextView
+        android:id="@+id/tvPendingTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="ממתין לאישור מנהל"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:textColor="#212121" />
+
+    <TextView
+        android:id="@+id/tvPendingBody"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center"
+        android:text="חשבונך נוצר בהצלחה. עליך להמתין לאישור מנהל המערכת לפני שתוכל להיכנס לקונסולת הנהג."
+        android:textSize="15sp"
+        android:textColor="#616161" />
+
+    <Button
+        android:id="@+id/btnSignOutPending"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:text="התנתק"
+        android:textAllCaps="false"
+        android:paddingStart="40dp"
+        android:paddingEnd="40dp" />
+
+</LinearLayout>

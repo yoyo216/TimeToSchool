@@ -96,6 +96,7 @@ namespace TimeToSchool.Service
                 userMap.Put("UserEmail", user.UserEmail);
                 userMap.Put("UserMobile", user.UserMobile);
                 userMap.Put("UserPassword", user.UserPass);
+                userMap.Put("Status", user.Status ?? "pending");
 
 
                 DocumentReference userReference = FirebaseFirestore.Instance
@@ -126,15 +127,17 @@ namespace TimeToSchool.Service
 
                 var userObject = await userRef.Get();
 
+                var snap = (DocumentSnapshot)userObject;
                 newuser = new Model.User()
                 {
                     Id = userId,
-                    FirstName = ((DocumentSnapshot)userObject).Get("FirstName").ToString(),
-                    LastName = ((DocumentSnapshot)userObject).Get("LastName").ToString(),
-                    UserEmail = ((DocumentSnapshot)userObject).Get("UserEmail").ToString(),
-                    UserMobile = ((DocumentSnapshot)userObject).Get("UserMobile").ToString(),
-                    UserPass = ((DocumentSnapshot)userObject).Get("UserPassword").ToString(),
-                    IsAdmin = bool.Parse(((DocumentSnapshot)userObject).Get("IsAdmin").ToString())
+                    FirstName = snap.Get("FirstName").ToString(),
+                    LastName = snap.Get("LastName").ToString(),
+                    UserEmail = snap.Get("UserEmail").ToString(),
+                    UserMobile = snap.Get("UserMobile").ToString(),
+                    UserPass = snap.Get("UserPassword").ToString(),
+                    IsAdmin = bool.Parse(snap.Get("IsAdmin").ToString()),
+                    Status = snap.Get("Status")?.ToString() ?? "approved"
                 };
                 Log.Debug(ProManager.TAG, $"GetUserById: Get User from Firestore DB success");
                 return newuser;
@@ -172,7 +175,8 @@ namespace TimeToSchool.Service
                             UserEmail = item.Get("UserEmail").ToString(),
                             UserMobile = item.Get("UserMobile").ToString(),
                             UserPass = item.Get("UserPassword").ToString(),
-                            IsAdmin = bool.Parse(item.Get("IsAdmin").ToString())
+                            IsAdmin = bool.Parse(item.Get("IsAdmin").ToString()),
+                            Status = item.Get("Status")?.ToString() ?? "approved"
                         };
                         users.Add(user);
                     }
@@ -236,6 +240,69 @@ namespace TimeToSchool.Service
             {
                 Log.Debug(ProManager.TAG, $"Delete user failed! " + ex.Message);
                 throw new Exception("Delete user failed!");
+            }
+        }
+        public static async Task BanUser(Model.User userToBan, string adminEmail)
+        {
+            try
+            {
+                string email = userToBan.UserEmail;
+
+                // Delete the auth account + Firestore user doc using existing reauth flow.
+                await Delete(userToBan);
+
+                // Then record the email so they cannot register again.
+                await BannedEmailsRepository.AddBannedEmail(new Model.BannedEmail
+                {
+                    Email = email,
+                    BannedAt = DateTime.UtcNow,
+                    BannedByEmail = adminEmail
+                });
+
+                Log.Debug(ProManager.TAG, $"BanUser: {email} banned by {adminEmail}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ProManager.TAG, $"BanUser failed: {ex.Message}");
+                throw new Exception("BanUser failed");
+            }
+        }
+        public static async Task UpdateUserStatus(string userId, string status)
+        {
+            try
+            {
+                DocumentReference userRef = FirebaseFirestore.Instance
+                                            .Collection("users").Document(userId);
+                await userRef.Update("Status", status);
+                Log.Debug(ProManager.TAG, $"UpdateUserStatus: {userId} -> {status}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ProManager.TAG, $"UpdateUserStatus failed: {ex.Message}");
+                throw new Exception("UpdateUserStatus failed");
+            }
+        }
+        public static async Task<int> MarkAllUsersAsApproved()
+        {
+            int updated = 0;
+            try
+            {
+                var documents = await FirebaseFirestore.Instance.Collection("users").Get();
+                var snapshot = (QuerySnapshot)documents;
+                if (snapshot == null || snapshot.IsEmpty) return 0;
+
+                foreach (DocumentSnapshot item in snapshot.Documents)
+                {
+                    await item.Reference.Update("Status", "approved");
+                    updated++;
+                }
+                Log.Debug(ProManager.TAG, $"MarkAllUsersAsApproved: updated {updated} user(s)");
+                return updated;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ProManager.TAG, $"MarkAllUsersAsApproved failed: {ex.Message}");
+                throw new Exception("MarkAllUsersAsApproved failed");
             }
         }
         public static void FetchUsersListener()

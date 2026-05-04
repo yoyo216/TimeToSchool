@@ -6,6 +6,7 @@ using Android.Views;
 using Android.Widget;
 using System;
 using TimeToSchool.BusinessLogic;
+using TimeToSchool.Helpers;
 using TimeToSchool.Service;
 
 namespace TimeToSchool
@@ -53,7 +54,8 @@ namespace TimeToSchool
                 LastName = _lastName.Text,
                 UserEmail = _userEmail.Text,
                 UserPass = _userPassword.Text,
-                UserMobile = _userMobile.Text
+                UserMobile = _userMobile.Text,
+                Status = "pending"
             };
 
             RegisterNewUser();
@@ -65,6 +67,13 @@ namespace TimeToSchool
             ShowProgressBar(true);
             try
             {
+                if (await BannedEmailsRepository.IsEmailBanned(_user.UserEmail))
+                {
+                    ShowProgressBar(false);
+                    Toast.MakeText(this, "כתובת מייל זו חסומה", ToastLength.Short).Show();
+                    return;
+                }
+
                 _user.Id = await UsersRepository.InsertAsync(_user);
                 ShowProgressBar(false);
                 Toast.MakeText(this, $"SignUp succeeded!", ToastLength.Short).Show();
@@ -72,8 +81,7 @@ namespace TimeToSchool
                 ProManager.CurrentUser = _user;
                 if (_cbRememberMe.Checked)
                     new PreferenceService(this).SaveUserObject(_user);
-                StartActivity(typeof(DriverActivity));
-                Finish();
+                RoleRouter.RouteFor(this, _user);
             }
             catch (Exception)
             {
