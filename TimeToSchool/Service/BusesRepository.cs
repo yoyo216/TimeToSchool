@@ -65,14 +65,17 @@ namespace TimeToSchool.Service
         {
             try
             {
-                // 1. Create a dictionary of the fields to update
-                // We use Java.Lang.Object to bridge the C# types to the Android Firestore SDK
                 var busData = new Dictionary<string, Java.Lang.Object>
         {
             { "BusLine", bus.BusLine },
             { "School", bus.School },
             { "Town", bus.Town }
         };
+                if (bus.FirstStopLat.HasValue)
+                {
+                    busData.Add("FirstStopLat", new Java.Lang.Double(bus.FirstStopLat.Value));
+                    busData.Add("FirstStopLng", new Java.Lang.Double(bus.FirstStopLng.Value));
+                }
 
                 // 2. Reference the specific document by its ID and call Update
                 await FirebaseFirestore.Instance
@@ -99,6 +102,11 @@ namespace TimeToSchool.Service
                 routeMap.Put("School", route.School);
                 routeMap.Put("Town", route.Town);
                 routeMap.Put("BusLine", route.BusLine);
+                if (route.FirstStopLat.HasValue)
+                {
+                    routeMap.Put("FirstStopLat", new Java.Lang.Double(route.FirstStopLat.Value));
+                    routeMap.Put("FirstStopLng", new Java.Lang.Double(route.FirstStopLng.Value));
+                }
 
                 // This creates the "BusRoutes" collection automatically
                 await db.Collection("BusRoutes").Add(routeMap);
@@ -145,8 +153,8 @@ namespace TimeToSchool.Service
                             School = item.Get("School").ToString(),
                             Town = item.Get("Town").ToString(),
                             BusLine = item.Get("BusLine").ToString(),
-
-
+                            FirstStopLat = TryGetDouble(item, "FirstStopLat"),
+                            FirstStopLng = TryGetDouble(item, "FirstStopLng"),
                         };
                         routes.Add(route);
                     }
@@ -186,6 +194,16 @@ namespace TimeToSchool.Service
                 return false;
             }
         }
+        private static double? TryGetDouble(DocumentSnapshot snapshot, string field)
+        {
+            var obj = snapshot.Get(field);
+            if (obj == null) return null;
+            if (double.TryParse(obj.ToString(), System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out double val))
+                return val;
+            return null;
+        }
+
         // use to filiter buses
         public List<string> GetSchools(List<BusRoute> _allRoutes)
         {

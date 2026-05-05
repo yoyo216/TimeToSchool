@@ -39,7 +39,48 @@
         android:layout_height="wrap_content"
         android:hint="Bus Line Name (e.g. Line 15)"
         android:inputType="textCapWords"
-        android:layout_marginBottom="20dp" />
+        android:layout_marginBottom="10dp" />
+
+	<TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="עצירה ראשונה (אופציונלי)"
+        android:textSize="13sp"
+        android:textColor="#555555"
+        android:layout_marginBottom="6dp" />
+
+	<LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="4dp">
+
+		<EditText
+            android:id="@+id/etFirstStopLat"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:hint="קו רוחב (Lat)"
+            android:inputType="numberDecimal|numberSigned"
+            android:layout_marginEnd="8dp" />
+
+		<EditText
+            android:id="@+id/etFirstStopLng"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:hint="קו אורך (Lng)"
+            android:inputType="numberDecimal|numberSigned" />
+	</LinearLayout>
+
+	<Button
+        android:id="@+id/btnPickLocation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="בחר מיקום על המפה"
+        style="@style/Widget.AppCompat.Button.Borderless.Colored"
+        android:textColor="@color/colorAccent"
+        android:layout_marginBottom="12dp" />
 
 	<LinearLayout
         android:layout_width="match_parent"

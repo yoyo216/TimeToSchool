@@ -81,7 +81,7 @@ namespace TimeToSchool.Fragments
         private void OnSnapshot(object sender, FirestoreEventListener.TaskListenerEventArgs args)
         {
             Activity?.RunOnUiThread(() =>
-            {
+            {   
                 if (args.Error != null)
                 {
                     Log.Debug(ProManager.TAG, $"PendingRequests listener error: {args.Error.Message}");

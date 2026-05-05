@@ -11,17 +11,18 @@ using System.Linq;
 using System.Text;
 using TimeToSchool.Model;
 using TimeToSchool.Service;
+using TimeToSchool;
 
 namespace TimeToSchool.Fragments
 {
     public class CreateBusDialogFragment : AndroidX.Fragment.App.DialogFragment
     {
         private EditText etSchool, etTown, etBusLine;
-        private Button btnSave, btnCancel;
+        private EditText etFirstStopLat, etFirstStopLng;
+        private Button btnSave, btnCancel, btnPickLocation;
         private string _currentBusId = null;
+        private const int MAP_PICKER_REQUEST = 101;
 
-        // SOLID: Use a Static Factory Method instead of a parameterized constructor
-        // This ensures Android can recreate the fragment safely.
         public static CreateBusDialogFragment NewInstance(BusRoute bus = null)
         {
             var frag = new CreateBusDialogFragment();
@@ -32,6 +33,11 @@ namespace TimeToSchool.Fragments
                 args.PutString("school", bus.School);
                 args.PutString("town", bus.Town);
                 args.PutString("busLine", bus.BusLine);
+                if (bus.FirstStopLat.HasValue)
+                {
+                    args.PutDouble("firstStopLat", bus.FirstStopLat.Value);
+                    args.PutDouble("firstStopLng", bus.FirstStopLng.Value);
+                }
                 frag.Arguments = args;
             }
             return frag;
@@ -51,12 +57,16 @@ namespace TimeToSchool.Fragments
             etSchool = view.FindViewById<EditText>(Resource.Id.etSchool);
             etTown = view.FindViewById<EditText>(Resource.Id.etTown);
             etBusLine = view.FindViewById<EditText>(Resource.Id.etBusLine);
+            etFirstStopLat = view.FindViewById<EditText>(Resource.Id.etFirstStopLat);
+            etFirstStopLng = view.FindViewById<EditText>(Resource.Id.etFirstStopLng);
+            btnPickLocation = view.FindViewById<Button>(Resource.Id.btnPickLocation);
             btnSave = view.FindViewById<Button>(Resource.Id.btnSaveBus);
             btnCancel = view.FindViewById<Button>(Resource.Id.btnCancel);
 
             // 2. Setup Events
             btnCancel.Click += (s, e) => Dismiss();
             btnSave.Click += OnSaveClicked;
+            btnPickLocation.Click += OnPickLocationClicked;
 
             // 3. Handle Pre-filling (Logic separated from lifecycle)
             PreFillBusData();
@@ -72,6 +82,11 @@ namespace TimeToSchool.Fragments
                 etSchool.Text = Arguments.GetString("school");
                 etTown.Text = Arguments.GetString("town");
                 etBusLine.Text = Arguments.GetString("busLine");
+                if (Arguments.ContainsKey("firstStopLat"))
+                {
+                    etFirstStopLat.Text = Arguments.GetDouble("firstStopLat").ToString("F6", System.Globalization.CultureInfo.InvariantCulture);
+                    etFirstStopLng.Text = Arguments.GetDouble("firstStopLng").ToString("F6", System.Globalization.CultureInfo.InvariantCulture);
+                }
 
                 title = "עריכת מסלול קיים";
                 buttonText = "עדכן שינויים";
@@ -93,14 +108,23 @@ namespace TimeToSchool.Fragments
             btnSave.Enabled = false;
             bool isEditing = !string.IsNullOrEmpty(_currentBusId);
 
+            double? lat = double.TryParse(etFirstStopLat.Text?.Trim(),
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out double parsedLat) ? parsedLat : (double?)null;
+            double? lng = double.TryParse(etFirstStopLng.Text?.Trim(),
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out double parsedLng) ? parsedLng : (double?)null;
+
             try
             {
                 BusRoute busData = new BusRoute
                 {
-                    Id = _currentBusId, // Important: ID is null for new, exists for edit
+                    Id = _currentBusId,
                     School = school,
                     Town = town,
-                    BusLine = line
+                    BusLine = line,
+                    FirstStopLat = lat,
+                    FirstStopLng = lng,
                 };
 
                 // SOLID: The repository handles deciding between Add or Update based on ID
@@ -120,6 +144,31 @@ namespace TimeToSchool.Fragments
             {
                 Toast.MakeText(Activity, "שגיאה: " + ex.Message, ToastLength.Long).Show();
                 btnSave.Enabled = true;
+            }
+        }
+
+        private void OnPickLocationClicked(object sender, EventArgs e)
+        {
+            var intent = new Intent(Activity, typeof(MapPickerActivity));
+            intent.PutExtra("town", etTown.Text.Trim());
+            if (double.TryParse(etFirstStopLat.Text, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture, out double existingLat) &&
+                double.TryParse(etFirstStopLng.Text, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture, out double existingLng))
+            {
+                intent.PutExtra("existingLat", existingLat);
+                intent.PutExtra("existingLng", existingLng);
+            }
+            StartActivityForResult(intent, MAP_PICKER_REQUEST);
+        }
+
+        public override void OnActivityResult(int requestCode, int resultCode, Intent data)
+        {
+            base.OnActivityResult(requestCode, resultCode, data);
+            if (requestCode == MAP_PICKER_REQUEST && resultCode == (int)Result.Ok && data != null)
+            {
+                etFirstStopLat.Text = data.GetDoubleExtra("lat", 0).ToString("F6", System.Globalization.CultureInfo.InvariantCulture);
+                etFirstStopLng.Text = data.GetDoubleExtra("lng", 0).ToString("F6", System.Globalization.CultureInfo.InvariantCulture);
             }
         }
 

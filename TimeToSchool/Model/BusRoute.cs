@@ -17,5 +17,7 @@ namespace TimeToSchool.Model
         public string School { get; set; }
         public string Town { get; set; }
         public string BusLine { get; set; }
+        public double? FirstStopLat { get; set; }
+        public double? FirstStopLng { get; set; }
     }
 }

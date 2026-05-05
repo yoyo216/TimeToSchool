@@ -84,6 +84,7 @@
     <Compile Include="Fragments\UsersManagementFragment.cs" />
     <Compile Include="Helpers\RoleRouter.cs" />
     <Compile Include="Helpers\UIHelper.cs" />
+    <Compile Include="MapPickerActivity.cs" />
     <Compile Include="Model\ActiveBus.cs" />
     <Compile Include="Model\BannedEmail.cs" />
     <Compile Include="Model\BusRoute.cs" />
@@ -157,6 +158,9 @@
     </PackageReference>
     <PackageReference Include="Xamarin.Google.Android.Material" Version="1.8.0" />
     <PackageReference Include="Xamarin.Essentials" Version="1.6.1" />
+    <PackageReference Include="Xamarin.GooglePlayServices.Maps">
+      <Version>118.1.0.4</Version>
+    </PackageReference>
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\drawable\ic_backgound_bus.png" />
@@ -245,6 +249,7 @@
     <AndroidResource Include="Resources\layout\fragment_pending_requests.xml" />
     <AndroidResource Include="Resources\layout\pending_approval_layout.xml" />
     <AndroidResource Include="Resources\layout\pending_request_item.xml" />
+    <AndroidResource Include="Resources\layout\activity_map_picker.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

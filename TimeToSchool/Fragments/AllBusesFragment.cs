@@ -118,12 +118,21 @@ namespace TimeToSchool.Fragments
                         Id = item.Id,
                         School = item.Get("School")?.ToString(),
                         Town = item.Get("Town")?.ToString(),
-                        BusLine = item.Get("BusLine")?.ToString()
+                        BusLine = item.Get("BusLine")?.ToString(),
+                        FirstStopLat = ParseDouble(item.Get("FirstStopLat")),
+                        FirstStopLng = ParseDouble(item.Get("FirstStopLng")),
                     });
                 }
 
                 Activity?.RunOnUiThread(() => _adapter.NotifyDataSetChanged());
             }
+        }
+
+        private static double? ParseDouble(Java.Lang.Object obj)
+        {
+            if (obj == null) return null;
+            return double.TryParse(obj.ToString(), System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out double val) ? val : (double?)null;
         }
 
         public override void OnDestroyView()
