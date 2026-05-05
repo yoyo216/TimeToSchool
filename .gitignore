@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Firebase config — contains API key, never commit
+TimeToSchool/Assets/googleservices.json
