@@ -23,6 +23,7 @@ namespace TimeToSchool.Fragments
         private PendingRequestsRViewAdapter _adapter;
         private TextView _tvCount;
         private TextView _tvEmpty;
+        private Button _btnApproveAll;
 
         private List<User> _pendingUsers = new List<User>();
 
@@ -34,9 +35,11 @@ namespace TimeToSchool.Fragments
         {
             var view = inflater.Inflate(Resource.Layout.fragment_pending_requests, container, false);
 
-            _tvCount     = view.FindViewById<TextView>(Resource.Id.tvPendingCount);
-            _tvEmpty     = view.FindViewById<TextView>(Resource.Id.tvPendingEmpty);
+            _tvCount      = view.FindViewById<TextView>(Resource.Id.tvPendingCount);
+            _tvEmpty      = view.FindViewById<TextView>(Resource.Id.tvPendingEmpty);
             _recyclerView = view.FindViewById<RecyclerView>(Resource.Id.recyclerPending);
+            _btnApproveAll = view.FindViewById<Button>(Resource.Id.btnApproveAll);
+            _btnApproveAll.Click += OnApproveAllClick;
 
             _adapter = new PendingRequestsRViewAdapter(Activity, _pendingUsers);
             _adapter.ItemApproveClick += OnApproveClick;
@@ -128,6 +131,39 @@ namespace TimeToSchool.Fragments
             _tvCount.Text = $"{_pendingUsers.Count} Pending";
             _tvEmpty.Visibility  = _pendingUsers.Count == 0 ? ViewStates.Visible : ViewStates.Gone;
             _recyclerView.Visibility = _pendingUsers.Count == 0 ? ViewStates.Gone : ViewStates.Visible;
+        }
+
+        private void OnApproveAllClick(object sender, EventArgs e)
+        {
+            if (_pendingUsers.Count == 0)
+            {
+                Toast.MakeText(Activity, "אין בקשות ממתינות", ToastLength.Short).Show();
+                return;
+            }
+
+            new AlertDialog.Builder(Activity)
+                .SetTitle("אשר את כל הבקשות")
+                .SetMessage($"לאשר את כל {_pendingUsers.Count} הבקשות הממתינות?")
+                .SetPositiveButton("אשר", async (s, args) =>
+                {
+                    var toApprove = _pendingUsers.ToList();
+                    int approved = 0;
+                    try
+                    {
+                        foreach (var user in toApprove)
+                        {
+                            await UsersRepository.UpdateUserStatus(user.Id, "approved");
+                            approved++;
+                        }
+                        Toast.MakeText(Activity, $"אושרו {approved} משתמשים", ToastLength.Short).Show();
+                    }
+                    catch (Exception ex)
+                    {
+                        Toast.MakeText(Activity, "שגיאה: " + ex.Message, ToastLength.Short).Show();
+                    }
+                })
+                .SetNegativeButton("ביטול", (s, args) => { })
+                .Show();
         }
 
         private void OnApproveClick(object sender, int position)

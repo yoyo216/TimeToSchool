@@ -64,7 +64,28 @@
       "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"C:\\\\Users\\\\yorah\\\\.nuget\\\\packages\\\\xamarin.googleplayservices.maps\\\\118.1.0.4\\\\lib\\\\monoandroid12.0\\\\Xamarin.GooglePlayServices.Maps.dll\"\\); $text = [System.Text.Encoding]::ASCII.GetString\\($bytes\\); $idx = $text.IndexOf\\(\"n_SetPosition\"\\); \\($text.Substring\\([Math]::Max\\(0,$idx-800\\), 1600\\) -replace '[^\\\\x20-\\\\x7E]', ' '\\).Trim\\(\\))",
       "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"C:\\\\Users\\\\yorah\\\\.nuget\\\\packages\\\\xamarin.googleplayservices.maps\\\\118.1.0.4\\\\lib\\\\monoandroid12.0\\\\Xamarin.GooglePlayServices.Maps.dll\"\\); $text = [System.Text.Encoding]::ASCII.GetString\\($bytes\\); $text -replace '[^\\\\x20-\\\\x7E]', '|' | Select-String -Pattern '[A-Za-z]{3,20}_Lcom_google_android_gms_maps_model_LatLng_[^_L]' -AllMatches | ForEach-Object { $_.Matches } | ForEach-Object { $_.Value } | Sort-Object -Unique)",
       "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"C:\\\\Users\\\\yorah\\\\.nuget\\\\packages\\\\xamarin.googleplayservices.maps\\\\118.1.0.4\\\\lib\\\\monoandroid12.0\\\\Xamarin.GooglePlayServices.Maps.dll\"\\); $text = [System.Text.Encoding]::ASCII.GetString\\($bytes\\); $idx = $text.IndexOf\\(\"SetPosition_Lcom_google_android_gms_maps_model_LatLng_\"\\); \\($text.Substring\\([Math]::Max\\(0,$idx-1000\\), 2000\\) -replace '[^\\\\x20-\\\\x7E]', ' '\\).Trim\\(\\) | Select-String -Pattern '\\\\S{4,}' -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -Unique | Where-Object { $_ -match '^[A-Za-z]' })",
-      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\\\\TimeToSchool\\\\Resources\\\\\" -Directory | Where-Object {$_.Name -match 'values'})"
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\\\\TimeToSchool\\\\Resources\\\\\" -Directory | Where-Object {$_.Name -match 'values'})",
+      "Bash(get-childitem -recurse -force)",
+      "Bash(select-object -expandproperty fullname)",
+      "Bash(git rm *)",
+      "Bash(git -C \"C:/Users/yorah/source/repos/TimeToSchool\" ls-files --error-unmatch \"TimeToSchool/Resources/values/secrets.xml\")",
+      "Bash(xargs grep -l \"GetMapAsync\\\\|SupportMapFragment\\\\|OnMapReady\")",
+      "Bash(xargs grep -l \"fragment\\\\|MapView\")",
+      "Bash(xargs grep -l \"bus.*route\\\\|BusRoute\\\\|tracking\")"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$d = [Console]::In.ReadToEnd() | ConvertFrom-Json; $fp = $d.tool_input.file_path; if ($fp -like '*TimeToSchool\\TimeToSchool\\*') { @{hookSpecificOutput=@{hookEventName='PostToolUse';additionalContext=('REMINDER: New file created at ' + $fp + '. Check if it needs an entry in TimeToSchool.csproj — AndroidResource for Resources/, AndroidAsset for Assets/, Compile for .cs files. If so, add it now before finishing.')}} | ConvertTo-Json -Compress }",
+            "shell": "powershell"
+          }
+        ]
+      }
     ]
   }
 }

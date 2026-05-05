@@ -40,6 +40,19 @@ Backend: Firebase Auth + Firestore. Language: C# / Xamarin.Android.
 - `ActiveTrips` — live trip tracking; written by drivers, read by public view
 - `BusStops` *(planned)* — ordered stop coordinates per route, linked to `BusRoutes` by ID; used for the privacy guard (bus only appears on map after reaching the first stop)
 
+## Project File Registration
+
+Xamarin Android requires every file to be explicitly listed in `TimeToSchool/TimeToSchool.csproj`. After creating any new file, add the appropriate entry:
+
+| File location | Entry type |
+|---|---|
+| `Resources/**/*.xml`, `Resources/**/*.png` | `<AndroidResource Include="..." />` |
+| `Assets/**/*` | `<AndroidAsset Include="..." />` |
+| `**/*.cs` | `<Compile Include="..." />` |
+| Other (templates, docs) | `<None Include="..." />` |
+
+Files on disk that are missing from the `.csproj` are invisible to Visual Studio and break the build.
+
 ## Key Patterns
 
 - **Repository pattern**: Always go through `UsersRepository`/`BusesRepository` for Firestore reads/writes — never call Firestore APIs directly from Activities or Fragments.

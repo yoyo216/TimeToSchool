@@ -49,9 +49,6 @@ namespace TimeToSchool.Fragments
         // Progress dialog
         private Dialog _progressDialog;
 
-        // DebugMode one-time migration
-        private Button _btnMigrateApprove;
-
         public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
             var view = inflater.Inflate(Resource.Layout.fragment_users_management, container, false);
@@ -95,34 +92,6 @@ namespace TimeToSchool.Fragments
             // Sort chip — react on both check and uncheck
             _chipSort.CheckedChange += (s, e) => ApplyFilters();
 
-            // DebugMode-only: one-time migration to mark all existing users as approved
-            _btnMigrateApprove = view.FindViewById<Button>(Resource.Id.btnMigrateApprove);
-            if (ProManager.DebugMode)
-            {
-                _btnMigrateApprove.Visibility = ViewStates.Visible;
-                _btnMigrateApprove.Click += OnMigrateApproveClick;
-            }
-        }
-
-        private void OnMigrateApproveClick(object sender, EventArgs e)
-        {
-            new AlertDialog.Builder(Activity)
-                .SetTitle("Mark all users as approved")
-                .SetMessage("This will set Status = \"approved\" on every user document. Run once. Continue?")
-                .SetPositiveButton("Run", async (s, args) =>
-                {
-                    try
-                    {
-                        int n = await UsersRepository.MarkAllUsersAsApproved();
-                        Toast.MakeText(Activity, $"Updated {n} user(s).", ToastLength.Short).Show();
-                    }
-                    catch (Exception ex)
-                    {
-                        Toast.MakeText(Activity, "Migration failed: " + ex.Message, ToastLength.Short).Show();
-                    }
-                })
-                .SetNegativeButton("Cancel", (s, args) => { })
-                .Show();
         }
 
         public override void OnResume()

@@ -17,6 +17,16 @@
         android:paddingTop="12dp"
         android:paddingBottom="8dp" />
 
+    <Button
+        android:id="@+id/btnApproveAll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="8dp"
+        android:text="אשר את כל הבקשות"
+        android:textAllCaps="false" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerPending"
         android:scrollbars="vertical"
