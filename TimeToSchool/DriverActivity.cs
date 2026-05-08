@@ -184,6 +184,13 @@ namespace TimeToSchool
                 state.TripData.DriverId = ProManager.CurrentUser.Id;
                 state.TripData.Date = DateTime.Now.ToString("yyyy-MM-dd");
 
+                var route = _allRoutes?.FirstOrDefault(r =>
+                    r.School  == state.TripData.SchoolName &&
+                    r.Town    == state.TripData.Town &&
+                    r.BusLine == state.TripData.BusLine);
+                state.TripData.IsVisible = !(route?.FirstStopLat.HasValue == true
+                                           && route.FirstStopLng.HasValue == true);
+
                 locManager.RequestLocationUpdates(LocationManager.NetworkProvider, 15000, 2, this);
                 await BusesRepository.UpdateBusLocation(state.TripData);
             }
@@ -270,12 +277,34 @@ namespace TimeToSchool
         public void OnLocationChanged(Location location)
         {
             var activeCard = _driverCards.FirstOrDefault(c => c.IsDriving);
-            if (activeCard != null)
-            {
-                activeCard.TripData.Latitude = location.Latitude;
-                activeCard.TripData.Longitude = location.Longitude;
-                _ = BusesRepository.UpdateBusLocation(activeCard.TripData);
-            }
+            if (activeCard == null) return;
+
+            activeCard.TripData.Latitude  = location.Latitude;
+            activeCard.TripData.Longitude = location.Longitude;
+
+            if (!activeCard.TripData.IsVisible)
+                TryUnlockVisibility(activeCard.TripData, location);
+
+            _ = BusesRepository.UpdateBusLocation(activeCard.TripData);
+        }
+
+        private void TryUnlockVisibility(ActiveBus trip, Location current)
+        {
+            var route = _allRoutes?.FirstOrDefault(r =>
+                r.School  == trip.SchoolName &&
+                r.Town    == trip.Town &&
+                r.BusLine == trip.BusLine);
+
+            if (route?.FirstStopLat == null || route.FirstStopLng == null) return;
+
+            float[] dist = new float[1];
+            Location.DistanceBetween(
+                current.Latitude, current.Longitude,
+                route.FirstStopLat.Value, route.FirstStopLng.Value,
+                dist);
+
+            if (dist[0] <= 50f)
+                trip.IsVisible = true;
         }
 
         public void OnProviderDisabled(string provider) { }

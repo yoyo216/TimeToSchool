@@ -14,12 +14,17 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="top"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:background="@drawable/bg_top_panel"
+        android:elevation="6dp">
 
+        <!-- Always-visible header row: back button + section label -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="8dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="8dp"
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
@@ -34,21 +39,68 @@
                 app:tint="@color/colorPrimary" />
 
             <TextView
-                android:id="@+id/tvSelectionSummary"
+                android:id="@+id/tvHeaderLabel"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="10dp"
-                android:background="#CC1976D2"
-                android:textColor="@android:color/white"
-                android:textStyle="bold"
-                android:textSize="14sp"
-                android:padding="8dp"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:gravity="center_vertical" />
+                android:textColor="#CCFFFFFF"
+                android:textSize="12sp" />
 
         </LinearLayout>
+
+        <!-- Collapsible detail section (3 lines = lines 2–4 of the 4-line panel) -->
+        <LinearLayout
+            android:id="@+id/llPanelContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="24dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:id="@+id/tvStatusMessage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/white"
+                android:textSize="13sp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp" />
+
+            <HorizontalScrollView
+                android:id="@+id/hsvEtaChips"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:id="@+id/llEtaChips"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical" />
+
+            </HorizontalScrollView>
+
+        </LinearLayout>
+
+        <!-- Grab-handle strip: tap or swipe to expand / collapse the panel -->
+        <FrameLayout
+            android:id="@+id/flHandleArea"
+            android:layout_width="match_parent"
+            android:layout_height="20dp">
+
+            <View
+                android:layout_width="32dp"
+                android:layout_height="4dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_grab_handle" />
+
+        </FrameLayout>
 
     </LinearLayout>
 

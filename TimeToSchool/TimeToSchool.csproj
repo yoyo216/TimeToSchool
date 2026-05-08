@@ -104,6 +104,7 @@
     <Compile Include="Service\DataService.cs" />
     <Compile Include="Service\FireBaseHelper.cs" />
     <Compile Include="Service\PreferenceService.cs" />
+    <Compile Include="Service\DirectionsApiService.cs" />
     <Compile Include="Service\RoadsApiService.cs" />
     <Compile Include="Service\UsersRepository.cs" />
     <Compile Include="SignInActivity.cs" />
@@ -248,6 +249,9 @@
     <AndroidResource Include="Resources\drawable\ic_arrow_left.xml" />
     <AndroidResource Include="Resources\drawable\ic_arrow_right.xml" />
     <AndroidResource Include="Resources\drawable\shape_avatar_bg.xml" />
+    <AndroidResource Include="Resources\drawable\bg_eta_chip.xml" />
+    <AndroidResource Include="Resources\drawable\bg_grab_handle.xml" />
+    <AndroidResource Include="Resources\drawable\bg_top_panel.xml" />
     <AndroidResource Include="Resources\layout\dialog_edit_user.xml">
       <SubType>Designer</SubType>
     </AndroidResource>

@@ -1,3 +1,4 @@
+using Android.Animation;
 using Android.Gms.Maps;
 using Android.Gms.Maps.Model;
 using Android.Graphics;
@@ -10,6 +11,7 @@ using Google.Android.Material.FloatingActionButton;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using TimeToSchool.Model;
 using TimeToSchool.Service;
 using static TimeToSchool.Service.FireBaseHelper;
@@ -31,11 +33,21 @@ namespace TimeToSchool.Fragments
         private string _school;
         private string _town;
         private string _busLine;
+        private View _panelContent;
+        private bool _isPanelExpanded = true;
+        private int _panelContentHeight = -1;
+        private float _touchStartY;
+        private DirectionsApiService _directionsApi;
+        private List<BusRoute> _busRoutes;
+        private TextView _tvStatusMessage;
+        private HorizontalScrollView _hsvEtaChips;
+        private LinearLayout _llEtaChips;
 
         public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
             string key = Resources.GetString(Resource.String.roads_api_key);
             _roadsApi = new RoadsApiService(key);
+            _directionsApi = new DirectionsApiService(key);
             return inflater.Inflate(Resource.Layout.fragment_public_bus_map, container, false);
         }
 
@@ -47,10 +59,19 @@ namespace TimeToSchool.Fragments
             _town    = Arguments?.GetString("town")     ?? string.Empty;
             _busLine = Arguments?.GetString("bus_line") ?? string.Empty;
 
-            var summary = string.IsNullOrEmpty(_busLine) || _busLine == "Any Available Bus"
-                ? $"{_school} · {_town}"
-                : $"{_school} · {_town} · {_busLine}";
-            view.FindViewById<TextView>(Resource.Id.tvSelectionSummary).Text = summary;
+            bool anyBus = string.IsNullOrEmpty(_busLine) || _busLine == "Any Available Bus";
+            view.FindViewById<TextView>(Resource.Id.tvHeaderLabel).Text =
+                $"{_school} - {_town} - {(anyBus ? "כל קו פנוי" : _busLine)}";
+            _tvStatusMessage = view.FindViewById<TextView>(Resource.Id.tvStatusMessage);
+            _hsvEtaChips     = view.FindViewById<HorizontalScrollView>(Resource.Id.hsvEtaChips);
+            _llEtaChips      = view.FindViewById<LinearLayout>(Resource.Id.llEtaChips);
+            _tvStatusMessage.Text = "מאתר אוטובוסים...";
+            _ = FetchBusRoutesAsync();
+
+            _panelContent = view.FindViewById(Resource.Id.llPanelContent);
+            _panelContent.Post(() => _panelContentHeight = _panelContent.Height);
+
+            view.FindViewById(Resource.Id.flHandleArea).Touch += OnHandleTouch;
 
             var mapFrag = (SupportMapFragment)ChildFragmentManager.FindFragmentById(Resource.Id.mapFragment);
             mapFrag.GetMapAsync(this);
@@ -228,6 +249,7 @@ namespace TimeToSchool.Fragments
                         _hasAutoFocused = true;
                         FocusAllMarkers(animate: false);
                     }
+                    _ = UpdateStatusPanelAsync();
                 });
         }
 
@@ -291,6 +313,77 @@ namespace TimeToSchool.Fragments
                 _map.MoveCamera(update);
         }
 
+        private void OnHandleTouch(object sender, View.TouchEventArgs e)
+        {
+            switch (e.Event.Action)
+            {
+                case MotionEventActions.Down:
+                    _touchStartY = e.Event.GetY();
+                    e.Handled = true;
+                    break;
+                case MotionEventActions.Up:
+                    float delta = e.Event.GetY() - _touchStartY;
+                    if (Math.Abs(delta) < 10f)
+                        TogglePanel();
+                    else if (delta > 0 && !_isPanelExpanded)
+                        ExpandPanel();
+                    else if (delta < 0 && _isPanelExpanded)
+                        CollapsePanel();
+                    e.Handled = true;
+                    break;
+                default:
+                    e.Handled = false;
+                    break;
+            }
+        }
+
+        private void TogglePanel()
+        {
+            if (_isPanelExpanded) CollapsePanel(); else ExpandPanel();
+        }
+
+        private void ExpandPanel()
+        {
+            if (_panelContentHeight < 0)
+            {
+                _panelContent.Visibility = ViewStates.Visible;
+                _isPanelExpanded = true;
+                return;
+            }
+            _panelContent.Visibility = ViewStates.Visible;
+            _panelContent.LayoutParameters.Height = 0;
+            var anim = ValueAnimator.OfInt(0, _panelContentHeight);
+            anim.SetDuration(260);
+            anim.Update += (s, e) =>
+            {
+                _panelContent.LayoutParameters.Height = ((Java.Lang.Integer)((ValueAnimator)s).AnimatedValue).IntValue();
+                _panelContent.RequestLayout();
+            };
+            anim.AnimationEnd += (s, e) =>
+                _panelContent.LayoutParameters.Height = ViewGroup.LayoutParams.WrapContent;
+            anim.Start();
+            _isPanelExpanded = true;
+        }
+
+        private void CollapsePanel()
+        {
+            if (_panelContentHeight < 0) _panelContentHeight = _panelContent.Height;
+            var anim = ValueAnimator.OfInt(_panelContent.Height, 0);
+            anim.SetDuration(260);
+            anim.Update += (s, e) =>
+            {
+                _panelContent.LayoutParameters.Height = ((Java.Lang.Integer)((ValueAnimator)s).AnimatedValue).IntValue();
+                _panelContent.RequestLayout();
+            };
+            anim.AnimationEnd += (s, e) =>
+            {
+                _panelContent.Visibility = ViewStates.Gone;
+                _panelContent.LayoutParameters.Height = ViewGroup.LayoutParams.WrapContent;
+            };
+            anim.Start();
+            _isPanelExpanded = false;
+        }
+
         public override void OnDestroyView()
         {
             if (_listener != null)
@@ -299,6 +392,102 @@ namespace TimeToSchool.Fragments
             _reg = null;
             _listener = null;
             base.OnDestroyView();
+        }
+
+        private async Task FetchBusRoutesAsync()
+        {
+            _busRoutes = await BusesRepository.GetBusesCollection();
+        }
+
+        private bool MatchesRoute(ActiveBus bus)
+        {
+            if (!Eq(bus.SchoolName, _school)) return false;
+            if (!Eq(bus.Town, _town)) return false;
+            if (!string.IsNullOrEmpty(_busLine) && _busLine != "Any Available Bus")
+                if (!Eq(bus.BusLine, _busLine)) return false;
+            return true;
+        }
+
+        private async Task UpdateStatusPanelAsync()
+        {
+            var matching = _busData.Values.Where(MatchesRoute).ToList();
+
+            if (matching.Any(b => b.IsVisible && b.Status == "Active"))
+            {
+                ShowStatusText("בנסיעה");
+                return;
+            }
+
+            var approaching = matching.Where(b => !b.IsVisible && b.Status == "Active").ToList();
+            if (approaching.Any())
+            {
+                var etaTasks = approaching.Select(ComputeEtaAsync).ToList();
+                var etaResults = await Task.WhenAll(etaTasks);
+                Activity?.RunOnUiThread(() => ShowEtaChips(etaResults));
+                return;
+            }
+
+            if (matching.Any())
+            {
+                var lines = string.Join(", ", matching.Select(b => $"קו {b.BusLine}").Distinct());
+                ShowStatusText($"אוטובוסים שפעלו היום: {lines}");
+                return;
+            }
+
+            ShowStatusText("אין אוטובוסים פעילים היום");
+        }
+
+        private async Task<(int? minutes, string busLine)> ComputeEtaAsync(ActiveBus bus)
+        {
+            var route = _busRoutes?.FirstOrDefault(r =>
+                Eq(r.School, bus.SchoolName) &&
+                Eq(r.Town, bus.Town) &&
+                Eq(r.BusLine, bus.BusLine));
+
+            if (route?.FirstStopLat == null || route.FirstStopLng == null)
+                return (null, bus.BusLine);
+
+            var minutes = await _directionsApi.GetEtaMinutes(
+                bus.Latitude, bus.Longitude,
+                route.FirstStopLat.Value, route.FirstStopLng.Value);
+
+            return (minutes, bus.BusLine);
+        }
+
+        private void ShowStatusText(string text)
+        {
+            _hsvEtaChips.Visibility = ViewStates.Gone;
+            _tvStatusMessage.Text = text;
+            _tvStatusMessage.Visibility = ViewStates.Visible;
+            _panelContentHeight = -1;
+        }
+
+        private void ShowEtaChips((int? minutes, string busLine)[] entries)
+        {
+            _tvStatusMessage.Visibility = ViewStates.Gone;
+            _llEtaChips.RemoveAllViews();
+
+            foreach (var (minutes, busLine) in entries)
+            {
+                string label = minutes.HasValue ? $"{minutes} דק'" : "בדרך";
+                var chip = new TextView(Context);
+                chip.Text = label;
+                chip.SetTextColor(Color.White);
+                chip.SetBackgroundResource(Resource.Drawable.bg_eta_chip);
+                var lp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WrapContent,
+                    ViewGroup.LayoutParams.WrapContent);
+                lp.SetMargins(0, 0, DpToPx(8), 0);
+                chip.LayoutParameters = lp;
+                chip.SetPadding(DpToPx(10), DpToPx(4), DpToPx(10), DpToPx(4));
+                string capturedLine = busLine;
+                chip.Click += (s, e) =>
+                    Toast.MakeText(Context, $"קו {capturedLine}", ToastLength.Short).Show();
+                _llEtaChips.AddView(chip);
+            }
+
+            _hsvEtaChips.Visibility = ViewStates.Visible;
+            _panelContentHeight = -1;
         }
 
         private class PublicBusInfoWindowAdapter : Java.Lang.Object, GoogleMap.IInfoWindowAdapter
