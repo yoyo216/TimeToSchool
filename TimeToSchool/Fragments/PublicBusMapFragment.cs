@@ -27,6 +27,7 @@ namespace TimeToSchool.Fragments
         private readonly Dictionary<string, ActiveBus> _busData = new Dictionary<string, ActiveBus>();
         private readonly Dictionary<string, long> _busTimestampMs = new Dictionary<string, long>();
         private bool _hasAutoFocused;
+        private int _currentIconSizeDp = -1;
         private string _school;
         private string _town;
         private string _busLine;
@@ -67,35 +68,73 @@ namespace TimeToSchool.Fragments
             _map.SetInfoWindowAdapter(new PublicBusInfoWindowAdapter(
                 LayoutInflater.From(Context), _busData, _markers, _busTimestampMs));
             _map.SetOnMarkerClickListener(this);
-            _busIcon = CreateCircularBusIcon();
+            _map.CameraChange += (s, e) => UpdateBusIconForZoom(e.Position.Zoom);
+            UpdateBusIconForZoom(_map.CameraPosition.Zoom);
             StartListening();
         }
 
-        private BitmapDescriptor CreateCircularBusIcon()
+        private int DpToPx(int dp) =>
+            (int)(dp * Resources.DisplayMetrics.Density + 0.5f);
+
+        private static int GetIconSizeDp(float zoom)
         {
-            int size = 120;
-            var output = Bitmap.CreateBitmap(size, size, Bitmap.Config.Argb8888);
+            float t = (Math.Max(5f, Math.Min(21f, zoom)) - 5f) / 16f;
+            return (int)(8f + t * 36f + 0.5f);
+        }
+
+        private void UpdateBusIconForZoom(float zoom)
+        {
+            int newSize = GetIconSizeDp(zoom);
+            if (newSize == _currentIconSizeDp) return;
+            _currentIconSizeDp = newSize;
+            _busIcon = CreateBusIcon(newSize);
+            foreach (var m in _markers.Values)
+                m.SetIcon(_busIcon);
+        }
+
+        private BitmapDescriptor CreateBusIcon(int sizeDp)
+        {
+            int w = DpToPx(sizeDp);
+            int h = (int)(w * 1.2f);
+            var output = Bitmap.CreateBitmap(w, h, Bitmap.Config.Argb8888);
             var canvas = new Canvas(output);
 
-            var circlePaint = new Paint { AntiAlias = true };
-            circlePaint.Color = Color.ParseColor("#1976D2");
-            canvas.DrawCircle(size / 2f, size / 2f, size / 2f - 2, circlePaint);
+            float cx = w / 2f;
+            float r  = w * 0.42f;
+            float cy = r + 2f;
 
-            var borderPaint = new Paint { AntiAlias = true };
-            borderPaint.SetStyle(Paint.Style.Stroke);
-            borderPaint.Color = Color.White;
-            borderPaint.StrokeWidth = 4f;
-            canvas.DrawCircle(size / 2f, size / 2f, size / 2f - 3, borderPaint);
+            var fillPaint = new Paint { AntiAlias = true };
+            fillPaint.Color = Color.ParseColor("#1976D2");
 
-            using (var busBmp = BitmapFactory.DecodeResource(Resources, Resource.Drawable.ic_icon_bus))
+            if (sizeDp >= 14)
             {
-                int iconSize = (int)(size * 0.60);
-                var scaled = Bitmap.CreateScaledBitmap(busBmp, iconSize, iconSize, true);
-                var tinted = TintBitmap(scaled, Color.White);
-                int offset = (size - iconSize) / 2;
-                canvas.DrawBitmap(tinted, offset, offset, null);
-                scaled.Recycle();
-                tinted.Recycle();
+                var path = new Path();
+                path.MoveTo(cx - r * 0.55f, cy + r * 0.55f);
+                path.LineTo(cx + r * 0.55f, cy + r * 0.55f);
+                path.LineTo(cx, h - 2f);
+                path.Close();
+                canvas.DrawPath(path, fillPaint);
+            }
+
+            canvas.DrawCircle(cx, cy, r, fillPaint);
+
+            if (sizeDp >= 14)
+            {
+                var borderPaint = new Paint { AntiAlias = true };
+                borderPaint.SetStyle(Paint.Style.Stroke);
+                borderPaint.Color = Color.White;
+                borderPaint.StrokeWidth = Math.Max(2f, w * 0.04f);
+                canvas.DrawCircle(cx, cy, r - borderPaint.StrokeWidth / 2f, borderPaint);
+
+                using (var busBmp = BitmapFactory.DecodeResource(Resources, Resource.Drawable.ic_icon_bus))
+                {
+                    int iconSize = (int)(r * 2 * 0.6f);
+                    var scaled = Bitmap.CreateScaledBitmap(busBmp, iconSize, iconSize, true);
+                    var tinted = TintBitmap(scaled, Color.White);
+                    canvas.DrawBitmap(tinted, cx - iconSize / 2f, cy - iconSize / 2f, null);
+                    scaled.Recycle();
+                    tinted.Recycle();
+                }
             }
 
             return BitmapDescriptorFactory.FromBitmap(output);
