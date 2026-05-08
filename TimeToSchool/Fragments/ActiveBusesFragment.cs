@@ -39,7 +39,14 @@ namespace TimeToSchool.Fragments
             _etSearch = view.FindViewById<TextInputEditText>(Resource.Id.etActiveBusesSearch);
             _etSearch.TextChanged += (s, e) => ApplyFilter();
             view.FindViewById<Android.Widget.Button>(Resource.Id.btnOpenMap)
-                .Click += (s, e) => StartActivity(new Intent(Activity, typeof(BusMapActivity)));
+                .Click += (s, e) =>
+                {
+                    var intent = new Intent(Activity, typeof(BusMapActivity));
+                    string q = _etSearch?.Text?.Trim() ?? string.Empty;
+                    if (!string.IsNullOrEmpty(q))
+                        intent.PutExtra("search_query", q);
+                    StartActivity(intent);
+                };
         }
 
         private void SetupRecyclerView()
@@ -84,15 +91,20 @@ namespace TimeToSchool.Fragments
         {
             if (_allBuses == null || _displayedBuses == null) return;
 
-            string query = _etSearch?.Text?.Trim().ToLower() ?? string.Empty;
+            var tokens = (_etSearch?.Text?.Trim().ToLower() ?? string.Empty)
+                .Split(' ')
+                .Where(t => !string.IsNullOrEmpty(t))
+                .ToArray();
 
             IEnumerable<ActiveBus> filtered = _allBuses;
-            if (!string.IsNullOrEmpty(query))
+            if (tokens.Length > 0)
             {
                 filtered = filtered.Where(b =>
-                    (b.Town?.ToLower().Contains(query) == true) ||
-                    (b.SchoolName?.ToLower().Contains(query) == true) ||
-                    (b.DriverName?.ToLower().Contains(query) == true));
+                    tokens.All(token =>
+                        (b.BusLine?.ToLower().Contains(token) == true) ||
+                        (b.Town?.ToLower().Contains(token) == true) ||
+                        (b.SchoolName?.ToLower().Contains(token) == true) ||
+                        (b.DriverName?.ToLower().Contains(token) == true)));
             }
 
             var sorted = filtered

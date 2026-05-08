@@ -29,6 +29,7 @@ namespace TimeToSchool.Fragments
         private readonly Dictionary<string, ActiveBus> _busData = new Dictionary<string, ActiveBus>();
         private TextInputEditText _etSearch;
         private bool _hasAutoFocused;
+        private string _filterQuery = string.Empty;
 
         public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
@@ -59,6 +60,8 @@ namespace TimeToSchool.Fragments
                     e.Handled = true;
                 }
             };
+
+            _filterQuery = Arguments?.GetString("search_query") ?? string.Empty;
         }
 
         public void OnMapReady(GoogleMap googleMap)
@@ -167,18 +170,36 @@ namespace TimeToSchool.Fragments
 
         private void UpdateOrAddMarker(ActiveBus bus, LatLng pos)
         {
+            Marker marker;
             if (_markers.TryGetValue(bus.FirestoreDocId, out var existing))
             {
                 existing.Position = pos;
+                marker = existing;
             }
             else
             {
-                _markers[bus.FirestoreDocId] = _map.AddMarker(
+                marker = _map.AddMarker(
                     new MarkerOptions()
                         .SetPosition(pos)
                         .SetTitle(bus.BusLine)
                         .SetIcon(_busIcon));
+                _markers[bus.FirestoreDocId] = marker;
             }
+            marker.Visible = MatchesFilter(bus);
+        }
+
+        private bool MatchesFilter(ActiveBus bus)
+        {
+            var tokens = _filterQuery.Trim().ToLower()
+                .Split(' ')
+                .Where(t => !string.IsNullOrEmpty(t))
+                .ToArray();
+            if (tokens.Length == 0) return true;
+            return tokens.All(token =>
+                (bus.BusLine?.ToLower().Contains(token) == true) ||
+                (bus.SchoolName?.ToLower().Contains(token) == true) ||
+                (bus.Town?.ToLower().Contains(token) == true) ||
+                (bus.DriverName?.ToLower().Contains(token) == true));
         }
 
         public bool OnMarkerClick(Marker marker) => false;
@@ -187,13 +208,16 @@ namespace TimeToSchool.Fragments
         {
             if (_map == null || _markers.Count == 0) return;
 
+            var targets = _markers.Values.Where(m => m.Visible).ToList();
+            if (targets.Count == 0) targets = _markers.Values.ToList();
+
             CameraUpdate update;
-            if (_markers.Count == 1)
-                update = CameraUpdateFactory.NewLatLngZoom(_markers.Values.First().Position, 13f);
+            if (targets.Count == 1)
+                update = CameraUpdateFactory.NewLatLngZoom(targets[0].Position, 13f);
             else
             {
                 var builder = new LatLngBounds.Builder();
-                foreach (var marker in _markers.Values)
+                foreach (var marker in targets)
                     builder.Include(marker.Position);
                 update = CameraUpdateFactory.NewLatLngBounds(builder.Build(), 200);
             }
@@ -214,6 +238,7 @@ namespace TimeToSchool.Fragments
             if (tokens.Length == 0) return;
 
             var match = _busData.Values.FirstOrDefault(b =>
+                _markers.TryGetValue(b.FirestoreDocId, out var m) && m.Visible &&
                 tokens.All(token =>
                     (b.BusLine?.ToLower().Contains(token) == true) ||
                     (b.SchoolName?.ToLower().Contains(token) == true) ||

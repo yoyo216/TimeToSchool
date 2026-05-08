@@ -22,7 +22,7 @@
             android:id="@+id/etActiveBusesSearch"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="חיפוש לפי עיר, בית ספר או נהג"
+            android:hint="חיפוש לפי קו, עיר, בית ספר או נהג"
             android:inputType="text"
             android:imeOptions="actionSearch"
             android:maxLines="1" />

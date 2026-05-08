@@ -17,9 +17,19 @@ namespace TimeToSchool
             SetContentView(Resource.Layout.activity_bus_map);
             SupportActionBar?.SetDisplayHomeAsUpEnabled(true);
             if (savedInstanceState == null)
+            {
+                var frag = new BusMapFragment();
+                string q = Intent?.GetStringExtra("search_query");
+                if (!string.IsNullOrEmpty(q))
+                {
+                    var args = new Bundle();
+                    args.PutString("search_query", q);
+                    frag.Arguments = args;
+                }
                 SupportFragmentManager.BeginTransaction()
-                    .Replace(Resource.Id.mapContainer, new BusMapFragment())
+                    .Replace(Resource.Id.mapContainer, frag)
                     .Commit();
+            }
         }
 
         public override bool DispatchTouchEvent(MotionEvent ev)

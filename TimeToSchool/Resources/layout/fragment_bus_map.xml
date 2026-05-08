@@ -43,7 +43,7 @@
                 android:id="@+id/etMapSearch"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="למשל: 102 נתניה"
+                android:hint="חיפוש לפי קו, עיר, בית ספר או נהג"
                 android:inputType="text"
                 android:imeOptions="actionSearch"
                 android:maxLines="1" />
