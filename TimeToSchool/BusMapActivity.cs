@@ -1,5 +1,8 @@
 using Android.App;
 using Android.OS;
+using Android.Views;
+using Android.Views.InputMethods;
+using Android.Widget;
 using AndroidX.AppCompat.App;
 using TimeToSchool.Fragments;
 
@@ -17,6 +20,26 @@ namespace TimeToSchool
                 SupportFragmentManager.BeginTransaction()
                     .Replace(Resource.Id.mapContainer, new BusMapFragment())
                     .Commit();
+        }
+
+        public override bool DispatchTouchEvent(MotionEvent ev)
+        {
+            if (ev.Action == MotionEventActions.Down)
+            {
+                var focused = CurrentFocus;
+                if (focused is EditText et)
+                {
+                    var rect = new Android.Graphics.Rect();
+                    et.GetGlobalVisibleRect(rect);
+                    if (!rect.Contains((int)ev.RawX, (int)ev.RawY))
+                    {
+                        et.ClearFocus();
+                        var imm = (InputMethodManager)GetSystemService(InputMethodService);
+                        imm.HideSoftInputFromWindow(et.WindowToken, HideSoftInputFlags.None);
+                    }
+                }
+            }
+            return base.DispatchTouchEvent(ev);
         }
 
         public override bool OnSupportNavigateUp()

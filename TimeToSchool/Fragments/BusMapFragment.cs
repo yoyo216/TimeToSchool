@@ -3,10 +3,12 @@ using Android.Gms.Maps.Model;
 using Android.Graphics;
 using Android.OS;
 using Android.Views;
+using Android.Views.InputMethods;
 using Android.Widget;
 using AndroidX.Fragment.App;
 using Firebase.Firestore;
 using Google.Android.Material.FloatingActionButton;
+using Google.Android.Material.TextField;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,6 +27,8 @@ namespace TimeToSchool.Fragments
         private BitmapDescriptor _busIcon;
         private readonly Dictionary<string, Marker> _markers = new Dictionary<string, Marker>();
         private readonly Dictionary<string, ActiveBus> _busData = new Dictionary<string, ActiveBus>();
+        private TextInputEditText _etSearch;
+        private bool _hasAutoFocused;
 
         public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
@@ -40,6 +44,21 @@ namespace TimeToSchool.Fragments
             mapFrag.GetMapAsync(this);
             view.FindViewById<FloatingActionButton>(Resource.Id.fabFocusAll)
                 .Click += (s, e) => FocusAllMarkers();
+
+            view.FindViewById<FloatingActionButton>(Resource.Id.fabBack)
+                .Click += (s, e) => Activity?.Finish();
+
+            _etSearch = view.FindViewById<TextInputEditText>(Resource.Id.etMapSearch);
+            _etSearch.TextChanged += (s, e) => OnSearchTextChanged();
+            _etSearch.EditorAction += (s, e) =>
+            {
+                if (e.ActionId == ImeAction.Search)
+                {
+                    var imm = (InputMethodManager)Activity.GetSystemService(Android.Content.Context.InputMethodService);
+                    imm.HideSoftInputFromWindow(_etSearch.WindowToken, HideSoftInputFlags.None);
+                    e.Handled = true;
+                }
+            };
         }
 
         public void OnMapReady(GoogleMap googleMap)
@@ -138,6 +157,11 @@ namespace TimeToSchool.Fragments
                         _markers.Remove(staleId);
                         _busData.Remove(staleId);
                     }
+                    if (!_hasAutoFocused && _markers.Count > 0)
+                    {
+                        _hasAutoFocused = true;
+                        FocusAllMarkers(animate: false);
+                    }
                 });
         }
 
@@ -159,22 +183,48 @@ namespace TimeToSchool.Fragments
 
         public bool OnMarkerClick(Marker marker) => false;
 
-        private void FocusAllMarkers()
+        private void FocusAllMarkers(bool animate = true)
         {
             if (_map == null || _markers.Count == 0) return;
 
+            CameraUpdate update;
             if (_markers.Count == 1)
+                update = CameraUpdateFactory.NewLatLngZoom(_markers.Values.First().Position, 13f);
+            else
             {
-                _map.AnimateCamera(CameraUpdateFactory.NewLatLngZoom(
-                    _markers.Values.First().Position, 15f));
-                return;
+                var builder = new LatLngBounds.Builder();
+                foreach (var marker in _markers.Values)
+                    builder.Include(marker.Position);
+                update = CameraUpdateFactory.NewLatLngBounds(builder.Build(), 200);
             }
 
-            var builder = new LatLngBounds.Builder();
-            foreach (var marker in _markers.Values)
-                builder.Include(marker.Position);
+            if (animate)
+                _map.AnimateCamera(update);
+            else
+                _map.MoveCamera(update);
+        }
 
-            _map.AnimateCamera(CameraUpdateFactory.NewLatLngBounds(builder.Build(), 150));
+        private void OnSearchTextChanged()
+        {
+            var tokens = (_etSearch.Text?.Trim().ToLower() ?? string.Empty)
+                .Split(' ')
+                .Where(t => !string.IsNullOrEmpty(t))
+                .ToArray();
+
+            if (tokens.Length == 0) return;
+
+            var match = _busData.Values.FirstOrDefault(b =>
+                tokens.All(token =>
+                    (b.BusLine?.ToLower().Contains(token) == true) ||
+                    (b.SchoolName?.ToLower().Contains(token) == true) ||
+                    (b.Town?.ToLower().Contains(token) == true) ||
+                    (b.DriverName?.ToLower().Contains(token) == true)));
+
+            if (match == null) return;
+            if (!_markers.TryGetValue(match.FirestoreDocId, out var marker)) return;
+
+            _map.AnimateCamera(CameraUpdateFactory.NewLatLngZoom(marker.Position, 15f));
+            marker.ShowInfoWindow();
         }
 
         public override void OnDestroyView()
