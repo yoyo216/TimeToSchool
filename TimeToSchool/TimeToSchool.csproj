@@ -83,6 +83,7 @@
     <Compile Include="Fragments\BusMapFragment.cs" />
     <Compile Include="Fragments\CreateBusDialogFragment.cs" />
     <Compile Include="Fragments\PendingRequestsFragment.cs" />
+    <Compile Include="Fragments\PublicBusMapFragment.cs" />
     <Compile Include="Fragments\UsersManagementFragment.cs" />
     <Compile Include="Helpers\RoleRouter.cs" />
     <Compile Include="Helpers\UIHelper.cs" />
@@ -93,6 +94,7 @@
     <Compile Include="Model\DriverCardState.cs" />
     <Compile Include="Model\User.cs" />
     <Compile Include="PendingApprovalActivity.cs" />
+    <Compile Include="PublicBusMapActivity.cs" />
     <Compile Include="Service\BannedEmailsRepository.cs" />
     <Compile Include="Service\BusesRepository.cs" />
     <Compile Include="MainActivity.cs" />
@@ -259,6 +261,9 @@
     <AndroidResource Include="Resources\layout\fragment_bus_info_sheet.xml" />
     <AndroidResource Include="Resources\layout\fragment_bus_map.xml" />
     <AndroidResource Include="Resources\layout\activity_bus_map.xml" />
+    <AndroidResource Include="Resources\layout\fragment_public_bus_info.xml" />
+    <AndroidResource Include="Resources\layout\fragment_public_bus_map.xml" />
+    <AndroidResource Include="Resources\layout\activity_public_bus_map.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

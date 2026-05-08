@@ -75,7 +75,8 @@
       "Bash(Select-Object Name)",
       "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\" -Recurse -Directory -ErrorAction SilentlyContinue | Select-Object -First 50 | ForEach-Object { $_.FullName })",
       "Bash(Remove-Item *)",
-      "Bash(xargs grep -l \"BusMapActivity\")"
+      "Bash(xargs grep -l \"BusMapActivity\")",
+      "Bash(xargs grep -l \"busLine\\\\|ActiveBus\")"
     ]
   },
   "hooks": {

@@ -149,8 +149,11 @@ namespace TimeToSchool
 
         private void OnFindBusClicked()
         {
-            string bus = string.IsNullOrWhiteSpace(autoBus.Text) ? "All Buses" : autoBus.Text;
-            Toast.MakeText(this, $"Searching for {bus} from {autoTown.Text} to {autoSchool.Text}...", ToastLength.Long).Show();
+            var intent = new Android.Content.Intent(this, typeof(PublicBusMapActivity));
+            intent.PutExtra("school", autoSchool.Text);
+            intent.PutExtra("town", autoTown.Text);
+            intent.PutExtra("bus_line", autoBus.Text);
+            StartActivity(intent);
         }
 
         public override bool DispatchTouchEvent(MotionEvent ev)
