@@ -79,6 +79,8 @@
     <Compile Include="Fragments\AllBusesFragment.cs" />
     <Compile Include="Fragments\BannedUsersFragment.cs" />
     <Compile Include="Fragments\BusesManagementFragment.cs" />
+    <Compile Include="Fragments\BusInfoBottomSheet.cs" />
+    <Compile Include="Fragments\BusMapFragment.cs" />
     <Compile Include="Fragments\CreateBusDialogFragment.cs" />
     <Compile Include="Fragments\PendingRequestsFragment.cs" />
     <Compile Include="Fragments\UsersManagementFragment.cs" />
@@ -100,6 +102,7 @@
     <Compile Include="Service\DataService.cs" />
     <Compile Include="Service\FireBaseHelper.cs" />
     <Compile Include="Service\PreferenceService.cs" />
+    <Compile Include="Service\RoadsApiService.cs" />
     <Compile Include="Service\UsersRepository.cs" />
     <Compile Include="SignInActivity.cs" />
     <Compile Include="SignUpActivity.cs" />
@@ -112,6 +115,7 @@
     <None Include="Resources\AboutResources.txt" />
     <None Include="Properties\AndroidManifest.xml" />
     <None Include="Assets\AboutAssets.txt" />
+    <None Include="Resources\values\secrets.xml.template" />
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\layout\activity_main.xml">
@@ -252,6 +256,8 @@
     <AndroidResource Include="Resources\layout\pending_request_item.xml" />
     <AndroidResource Include="Resources\layout\activity_map_picker.xml" />
     <AndroidResource Include="Resources\values\secrets.xml" />
+    <AndroidResource Include="Resources\layout\fragment_bus_info_sheet.xml" />
+    <AndroidResource Include="Resources\layout\fragment_bus_map.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

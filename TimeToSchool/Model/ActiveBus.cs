@@ -25,6 +25,9 @@ namespace TimeToSchool.Model
         public string Date { get; set; }   // "yyyy-MM-dd"
         public double Latitude { get; set; }
         public double Longitude { get; set; }
+        public bool IsVisible { get; set; } = true;
+        public string FirestoreDocId { get; set; }
+        public string LastUpdatedTime { get; set; }
 
         // Helper to turn this object into a Firebase Map
         public HashMap ToMap()
@@ -39,6 +42,7 @@ namespace TimeToSchool.Model
             map.Put("date", Date);
             map.Put("location", new GeoPoint(Latitude, Longitude));
             map.Put("lastUpdated", FieldValue.ServerTimestamp());
+            map.Put("isVisible", new Java.Lang.Boolean(IsVisible));
             return map;
         }
 

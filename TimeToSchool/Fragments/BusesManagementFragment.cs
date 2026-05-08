@@ -60,7 +60,12 @@ namespace TimeToSchool.Fragments
     {
         public void OnConfigureTab(TabLayout.Tab tab, int position)
         {
-            tab.SetText(position == 0 ? "All Routes" : "Live Trips");
+            switch (position)
+            {
+                case 0: tab.SetText("All Routes"); break;
+                case 1: tab.SetText("Live Trips"); break;
+                case 2: tab.SetText("Map"); break;
+            }
         }
     }
 }

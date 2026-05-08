@@ -71,7 +71,9 @@
       "Bash(git -C \"C:/Users/yorah/source/repos/TimeToSchool\" ls-files --error-unmatch \"TimeToSchool/Resources/values/secrets.xml\")",
       "Bash(xargs grep -l \"GetMapAsync\\\\|SupportMapFragment\\\\|OnMapReady\")",
       "Bash(xargs grep -l \"fragment\\\\|MapView\")",
-      "Bash(xargs grep -l \"bus.*route\\\\|BusRoute\\\\|tracking\")"
+      "Bash(xargs grep -l \"bus.*route\\\\|BusRoute\\\\|tracking\")",
+      "Bash(Select-Object Name)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\" -Recurse -Directory -ErrorAction SilentlyContinue | Select-Object -First 50 | ForEach-Object { $_.FullName })"
     ]
   },
   "hooks": {
