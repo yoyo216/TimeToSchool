@@ -19,10 +19,8 @@ namespace TimeToSchool.Adapter
         {
         }
 
-        // 2. ItemCount: All Routes, Live Trips, Map
-        public override int ItemCount => 3;
+        public override int ItemCount => 2;
 
-        // 3. CreateFragment: Returns the specific fragment for each tab position
         public override AndroidX.Fragment.App.Fragment CreateFragment(int position)
         {
             switch (position)
@@ -31,8 +29,6 @@ namespace TimeToSchool.Adapter
                     return new AllBusesFragment();
                 case 1:
                     return new ActiveBusesFragment();
-                case 2:
-                    return new BusMapFragment();
                 default:
                     return new AllBusesFragment();
             }

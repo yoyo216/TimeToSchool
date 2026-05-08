@@ -134,20 +134,6 @@ namespace TimeToSchool.Service
             }
         }
 
-        public static async Task UpdateBusVisibility(string docId, bool isVisible)
-        {
-            try
-            {
-                await FirebaseFirestore.Instance
-                    .Collection("ActiveTrips")
-                    .Document(docId)
-                    .Update("isVisible", new Java.Lang.Boolean(isVisible));
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ProManager.TAG, $"UpdateBusVisibility error: {ex.Message}");
-            }
-        }
         public static async Task<List<Model.BusRoute>> GetBusesCollection()
         {
             List<Model.BusRoute> routes = new List<Model.BusRoute>();

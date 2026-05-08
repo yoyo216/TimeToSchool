@@ -1,3 +1,4 @@
+using Android.Content;
 using Android.OS;
 using Android.Views;
 using Android.Widget;
@@ -37,6 +38,8 @@ namespace TimeToSchool.Fragments
             _emptyView = view.FindViewById<TextView>(Resource.Id.tvActiveBusesEmpty);
             _etSearch = view.FindViewById<TextInputEditText>(Resource.Id.etActiveBusesSearch);
             _etSearch.TextChanged += (s, e) => ApplyFilter();
+            view.FindViewById<Android.Widget.Button>(Resource.Id.btnOpenMap)
+                .Click += (s, e) => StartActivity(new Intent(Activity, typeof(BusMapActivity)));
         }
 
         private void SetupRecyclerView()

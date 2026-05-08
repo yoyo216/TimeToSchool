@@ -73,7 +73,8 @@
       "Bash(xargs grep -l \"fragment\\\\|MapView\")",
       "Bash(xargs grep -l \"bus.*route\\\\|BusRoute\\\\|tracking\")",
       "Bash(Select-Object Name)",
-      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\" -Recurse -Directory -ErrorAction SilentlyContinue | Select-Object -First 50 | ForEach-Object { $_.FullName })"
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\" -Recurse -Directory -ErrorAction SilentlyContinue | Select-Object -First 50 | ForEach-Object { $_.FullName })",
+      "Bash(Remove-Item *)"
     ]
   },
   "hooks": {

@@ -53,9 +53,9 @@ namespace TimeToSchool.Fragments
             // Using the TabMediator to connect them
             new TabLayoutMediator(_tabLayout, _viewPager, new BusTabConfiguration()).Attach();
         }
+
     }
 
-    // SOLID: Single Responsibility - This class ONLY cares about Tab Titles
     public class BusTabConfiguration : Java.Lang.Object, TabLayoutMediator.ITabConfigurationStrategy
     {
         public void OnConfigureTab(TabLayout.Tab tab, int position)
@@ -64,7 +64,6 @@ namespace TimeToSchool.Fragments
             {
                 case 0: tab.SetText("All Routes"); break;
                 case 1: tab.SetText("Live Trips"); break;
-                case 2: tab.SetText("Map"); break;
             }
         }
     }

@@ -74,12 +74,12 @@
     <Compile Include="Adapter\UserViewHolder.cs.cs" />
     <Compile Include="AdminMainActivity.cs" />
     <Compile Include="BusinessLogic\ProManager.cs" />
+    <Compile Include="BusMapActivity.cs" />
     <Compile Include="DriverActivity.cs" />
     <Compile Include="Fragments\ActiveBusesFragment.cs" />
     <Compile Include="Fragments\AllBusesFragment.cs" />
     <Compile Include="Fragments\BannedUsersFragment.cs" />
     <Compile Include="Fragments\BusesManagementFragment.cs" />
-    <Compile Include="Fragments\BusInfoBottomSheet.cs" />
     <Compile Include="Fragments\BusMapFragment.cs" />
     <Compile Include="Fragments\CreateBusDialogFragment.cs" />
     <Compile Include="Fragments\PendingRequestsFragment.cs" />
@@ -258,6 +258,7 @@
     <AndroidResource Include="Resources\values\secrets.xml" />
     <AndroidResource Include="Resources\layout\fragment_bus_info_sheet.xml" />
     <AndroidResource Include="Resources\layout\fragment_bus_map.xml" />
+    <AndroidResource Include="Resources\layout\activity_bus_map.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

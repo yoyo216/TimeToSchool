@@ -27,6 +27,7 @@ namespace TimeToSchool.Service
                 if (points == null || points.Count == 0) return null;
                 double sLat = (double)points[0]["location"]["latitude"];
                 double sLng = (double)points[0]["location"]["longitude"];
+                Android.Util.Log.Debug("RoadsApiService", $"Snapped ({lat:F5},{lng:F5}) → ({sLat:F5},{sLng:F5})");
                 return new LatLng(sLat, sLng);
             }
             catch (Exception ex)

@@ -9,4 +9,15 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabFocusAll"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:contentDescription="מיקד כל אוטובוסים"
+        android:src="@android:drawable/ic_menu_zoom"
+        app:fabSize="normal"
+        xmlns:app="http://schemas.android.com/apk/res-auto" />
+
 </FrameLayout>
