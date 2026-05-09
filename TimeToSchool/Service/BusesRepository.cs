@@ -204,10 +204,12 @@ namespace TimeToSchool.Service
                 if (!snap.Exists()) return null;
                 return new BusRoute
                 {
-                    Id      = snap.Id,
-                    School  = snap.Get("School").ToString(),
-                    Town    = snap.Get("Town").ToString(),
-                    BusLine = snap.Get("BusLine").ToString(),
+                    Id           = snap.Id,
+                    School       = snap.Get("School").ToString(),
+                    Town         = snap.Get("Town").ToString(),
+                    BusLine      = snap.Get("BusLine").ToString(),
+                    FirstStopLat = TryGetDouble(snap, "FirstStopLat"),
+                    FirstStopLng = TryGetDouble(snap, "FirstStopLng"),
                 };
             }
             catch (Exception ex)

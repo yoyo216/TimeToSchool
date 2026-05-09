@@ -40,14 +40,17 @@ namespace TimeToSchool.Fragments
         private DirectionsApiService _directionsApi;
         private List<BusRoute> _busRoutes;
         private TextView _tvStatusMessage;
+        private TextView _tvBusLineInfo;
         private HorizontalScrollView _hsvEtaChips;
         private LinearLayout _llEtaChips;
+        private string _selectedChipBusLine;
 
         public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
-            string key = Resources.GetString(Resource.String.roads_api_key);
-            _roadsApi = new RoadsApiService(key);
-            _directionsApi = new DirectionsApiService(key);
+            string roadsKey = Resources.GetString(Resource.String.roads_api_key);
+            string mapsKey  = Resources.GetString(Resource.String.google_maps_key);
+            _roadsApi      = new RoadsApiService(roadsKey);
+            _directionsApi = new DirectionsApiService(mapsKey, Context);
             return inflater.Inflate(Resource.Layout.fragment_public_bus_map, container, false);
         }
 
@@ -63,6 +66,7 @@ namespace TimeToSchool.Fragments
             view.FindViewById<TextView>(Resource.Id.tvHeaderLabel).Text =
                 $"{_school} - {_town} - {(anyBus ? "כל קו פנוי" : _busLine)}";
             _tvStatusMessage = view.FindViewById<TextView>(Resource.Id.tvStatusMessage);
+            _tvBusLineInfo   = view.FindViewById<TextView>(Resource.Id.tvBusLineInfo);
             _hsvEtaChips     = view.FindViewById<HorizontalScrollView>(Resource.Id.hsvEtaChips);
             _llEtaChips      = view.FindViewById<LinearLayout>(Resource.Id.llEtaChips);
             _tvStatusMessage.Text = "מאתר אוטובוסים...";
@@ -428,6 +432,8 @@ namespace TimeToSchool.Fragments
             var approaching = matching.Where(b => !b.IsVisible && b.Status == "Active" && IsTimestampFresh(b.FirestoreDocId)).ToList();
             if (approaching.Any())
             {
+                if (_busRoutes == null)
+                    await FetchBusRoutesAsync();
                 var etaTasks = approaching.Select(ComputeEtaAsync).ToList();
                 var etaResults = await Task.WhenAll(etaTasks);
                 Activity?.RunOnUiThread(() => ShowEtaChips(etaResults));
@@ -464,6 +470,8 @@ namespace TimeToSchool.Fragments
         private void ShowStatusText(string text)
         {
             _hsvEtaChips.Visibility = ViewStates.Gone;
+            _tvBusLineInfo.Visibility = ViewStates.Gone;
+            _selectedChipBusLine = null;
             _tvStatusMessage.Text = text;
             _tvStatusMessage.Visibility = ViewStates.Visible;
             _panelContentHeight = -1;
@@ -472,11 +480,19 @@ namespace TimeToSchool.Fragments
         private void ShowEtaChips((int? minutes, string busLine)[] entries)
         {
             _tvStatusMessage.Visibility = ViewStates.Gone;
+            _tvBusLineInfo.Visibility = ViewStates.Gone;
+            _selectedChipBusLine = null;
             _llEtaChips.RemoveAllViews();
+
+            var prefix = new TextView(Context);
+            prefix.Text = "בדרך: ";
+            prefix.SetTextColor(Color.White);
+            prefix.SetPadding(0, DpToPx(4), 0, DpToPx(4));
+            _llEtaChips.AddView(prefix);
 
             foreach (var (minutes, busLine) in entries)
             {
-                string label = minutes.HasValue ? $"{minutes} דק'" : "בדרך";
+                string label = minutes.HasValue ? $"{minutes}" : "unknown";
                 var chip = new TextView(Context);
                 chip.Text = label;
                 chip.SetTextColor(Color.White);
@@ -489,7 +505,20 @@ namespace TimeToSchool.Fragments
                 chip.SetPadding(DpToPx(10), DpToPx(4), DpToPx(10), DpToPx(4));
                 string capturedLine = busLine;
                 chip.Click += (s, e) =>
-                    Toast.MakeText(Context, $"קו {capturedLine}", ToastLength.Short).Show();
+                {
+                    if (_selectedChipBusLine == capturedLine)
+                    {
+                        _tvBusLineInfo.Visibility = ViewStates.Gone;
+                        _selectedChipBusLine = null;
+                    }
+                    else
+                    {
+                        _tvBusLineInfo.Text = $"קו {capturedLine}";
+                        _tvBusLineInfo.Visibility = ViewStates.Visible;
+                        _selectedChipBusLine = capturedLine;
+                    }
+                    _panelContentHeight = -1;
+                };
                 _llEtaChips.AddView(chip);
             }
 

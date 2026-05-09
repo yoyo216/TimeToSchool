@@ -43,6 +43,9 @@ namespace TimeToSchool
         private int _simIndex;
         private Handler _simHandler;
         private ActiveBus _simRoute;
+        private double _simFirstStopLat;
+        private double _simFirstStopLng;
+        private bool _simHasFirstStop;
         private readonly (double Lat, double Lng)[] _simWaypoints =
         {
             (32.164200, 34.887500), // start — southern entry to Ramot HaShavim
@@ -172,6 +175,10 @@ namespace TimeToSchool
                 return;
             }
 
+            _simHasFirstStop = route.FirstStopLat.HasValue && route.FirstStopLng.HasValue;
+            _simFirstStopLat = route.FirstStopLat ?? 0;
+            _simFirstStopLng = route.FirstStopLng ?? 0;
+
             _simRoute = new ActiveBus
             {
                 SchoolName = route.School,
@@ -181,7 +188,7 @@ namespace TimeToSchool
                 DriverName = ProManager.CurrentUser?.FirstName ?? "Simulator",
                 Status     = "Active",
                 Date       = DateTime.Now.ToString("yyyy-MM-dd"),
-                IsVisible  = false,
+                IsVisible  = !_simHasFirstStop,
             };
 
             _simulating = true;
@@ -201,10 +208,18 @@ namespace TimeToSchool
             _simRoute.Longitude = wp.Lng;
             _simIndex++;
 
+            if (!_simRoute.IsVisible && _simHasFirstStop)
+            {
+                float[] dist = new float[1];
+                Android.Locations.Location.DistanceBetween(wp.Lat, wp.Lng, _simFirstStopLat, _simFirstStopLng, dist);
+                if (dist[0] <= 50f)
+                    _simRoute.IsVisible = true;
+            }
+
             _ = BusesRepository.UpdateBusLocation(_simRoute);
             Android.Util.Log.Debug(ProManager.TAG, $"[SIM] step {_simIndex}: {wp.Lat},{wp.Lng}");
 
-            _simHandler.PostDelayed(AdvanceSimStep, 15_000);
+            _simHandler.PostDelayed(AdvanceSimStep, 8_000);
         }
 
         private void StopSimulation()

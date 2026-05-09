@@ -61,6 +61,19 @@
             android:paddingBottom="4dp">
 
             <TextView
+                android:id="@+id/tvBusLineInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:background="@drawable/bg_eta_chip"
+                android:textColor="@android:color/white"
+                android:textSize="13sp"
+                android:gravity="center"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
                 android:id="@+id/tvStatusMessage"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
