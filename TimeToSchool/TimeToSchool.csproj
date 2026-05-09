@@ -253,6 +253,7 @@
     <AndroidResource Include="Resources\drawable\bg_eta_chip.xml" />
     <AndroidResource Include="Resources\drawable\bg_grab_handle.xml" />
     <AndroidResource Include="Resources\drawable\bg_top_panel.xml" />
+    <AndroidResource Include="Resources\drawable\info_panel_bg.xml" />
     <AndroidResource Include="Resources\layout\dialog_edit_user.xml">
       <SubType>Designer</SubType>
     </AndroidResource>

@@ -31,6 +31,13 @@ namespace TimeToSchool
         private DriverCardAdapter _adapter;
         private ItemTouchHelper _touchHelper;
         private TextView globalStatusText;
+        private TextView _infoPanelDriverName;
+        private TextView _infoPanelStatus;
+        private TextView _infoPanelStateChip;
+        private TextView _infoPanelRoute;
+        private TextView _infoPanelVisibilityStatus;
+        private View _infoPanelDivider;
+        private LinearLayout _infoPanelDrivingSection;
 
         private LocationManager locManager;
         private PreferenceService _prefService;
@@ -98,8 +105,16 @@ namespace TimeToSchool
 
         private void InitViews()
         {
-            _recyclerView    = FindViewById<RecyclerView>(Resource.Id.cardsContainer);
-            globalStatusText = FindViewById<TextView>(Resource.Id.globalStatusText);
+            _recyclerView        = FindViewById<RecyclerView>(Resource.Id.cardsContainer);
+            globalStatusText     = FindViewById<TextView>(Resource.Id.globalStatusText);
+            _infoPanelDriverName      = FindViewById<TextView>(Resource.Id.infoPanelDriverName);
+            _infoPanelStatus          = FindViewById<TextView>(Resource.Id.infoPanelStatus);
+            _infoPanelStateChip       = FindViewById<TextView>(Resource.Id.infoPanelStateChip);
+            _infoPanelRoute           = FindViewById<TextView>(Resource.Id.infoPanelRoute);
+            _infoPanelVisibilityStatus= FindViewById<TextView>(Resource.Id.infoPanelVisibilityStatus);
+            _infoPanelDivider         = FindViewById<View>(Resource.Id.infoPanelDivider);
+            _infoPanelDrivingSection  = FindViewById<LinearLayout>(Resource.Id.infoPanelDrivingSection);
+            UpdateInfoPanel();
 
             _btnSimulate = FindViewById<Button>(Resource.Id.btnSimulateBus);
             if (ProManager.DebugMode)
@@ -279,11 +294,50 @@ namespace TimeToSchool
             _adapter.IsGlobalDriving = _isGlobalDriving;
             _adapter.NotifyDataSetChanged();
             UpdateGlobalStatus();
+            UpdateInfoPanel();
         }
 
         private void UpdateGlobalStatus()
         {
             globalStatusText.Text = _isGlobalDriving ? "נסיעה פעילה" : "מוכן לנסיעה";
+        }
+
+        private void UpdateInfoPanel()
+        {
+            var user = ProManager.CurrentUser;
+            if (user != null)
+                _infoPanelDriverName.Text = $"שלום, {user.FirstName} {user.LastName}";
+
+            int total  = _driverCards?.Count ?? 0;
+            int active = _driverCards?.Count(c => c.IsDriving) ?? 0;
+
+            if (_isGlobalDriving)
+            {
+                _infoPanelStateChip.Text = "נוסע";
+                _infoPanelStatus.Text    = $"נסיעה פעילה · {active}/{total} קוים";
+
+                var drivingCard = _driverCards?.FirstOrDefault(c => c.IsDriving);
+                if (drivingCard != null)
+                {
+                    var t = drivingCard.TripData;
+                    _infoPanelRoute.Text = $"{t.SchoolName}  ←  {t.Town}  ←  {t.BusLine}";
+
+                    bool isVisible = t.IsVisible;
+                    _infoPanelVisibilityStatus.Text      = isVisible ? "גלוי לציבור: ✓ כן" : "גלוי לציבור: ✗ לא עדיין";
+                    _infoPanelVisibilityStatus.SetTextColor(
+                        Android.Graphics.Color.ParseColor(isVisible ? "#69F0AE" : "#FF7043"));
+                }
+
+                _infoPanelDivider.Visibility        = ViewStates.Visible;
+                _infoPanelDrivingSection.Visibility = ViewStates.Visible;
+            }
+            else
+            {
+                _infoPanelStateChip.Text            = "מוכן";
+                _infoPanelStatus.Text               = $"{total} קוים טעונים · מוכן לנסיעה";
+                _infoPanelDivider.Visibility        = ViewStates.Gone;
+                _infoPanelDrivingSection.Visibility = ViewStates.Gone;
+            }
         }
 
         #endregion
