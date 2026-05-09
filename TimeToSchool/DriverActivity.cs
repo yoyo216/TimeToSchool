@@ -150,8 +150,15 @@ namespace TimeToSchool
                 _prefService.SaveDriverCards(_driverCards);
         }
 
+        protected override void OnResume()
+        {
+            base.OnResume();
+            TripTrackingService.TripAutoStopped += HandleAutoTripStop;
+        }
+
         protected override void OnPause()
         {
+            TripTrackingService.TripAutoStopped -= HandleAutoTripStop;
             base.OnPause();
             SaveCardsIfRemembered();
         }
@@ -321,6 +328,16 @@ namespace TimeToSchool
                 await BusesRepository.UpdateBusLocation(state.TripData);
             }
             RefreshCards();
+        }
+
+        private void HandleAutoTripStop()
+        {
+            foreach (var card in _driverCards.Where(c => c.IsDriving))
+                card.IsDriving = false;
+            _isGlobalDriving = false;
+            SaveCardsIfRemembered();
+            RefreshCards();
+            Android.Widget.Toast.MakeText(this, "הנסיעה הסתיימה — הגעת ליעד", ToastLength.Long).Show();
         }
 
         private void StopAllActiveTrips()
