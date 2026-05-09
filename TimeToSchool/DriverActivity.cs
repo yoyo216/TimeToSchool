@@ -13,6 +13,8 @@ using Google.Android.Material.TextField;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
 using TimeToSchool.Adapter;
 using TimeToSchool.BusinessLogic;
 using TimeToSchool.Model;
@@ -35,6 +37,27 @@ namespace TimeToSchool
         private List<DriverCardState> _driverCards = new List<DriverCardState>();
         private List<BusRoute> _allRoutes;
         private bool _isGlobalDriving = false;
+
+        private Button _btnSimulate;
+        private bool _simulating;
+        private int _simIndex;
+        private Handler _simHandler;
+        private ActiveBus _simRoute;
+        private readonly (double Lat, double Lng)[] _simWaypoints =
+        {
+            (32.164200, 34.887500), // start — southern entry to Ramot HaShavim
+            (32.164900, 34.888100),
+            (32.165600, 34.888700),
+            (32.166300, 34.889400),
+            (32.167000, 34.890100),
+            (32.167484, 34.890852), // user-specified target waypoint
+            (32.167900, 34.891500),
+            (32.168500, 34.892200),
+            (32.169200, 34.892900),
+            (32.169900, 34.893600),
+            (32.170500, 34.894200),
+            (32.171100, 34.894800), // end — northern exit of Ramot HaShavim
+        };
 
         protected override int GetContentLayoutId() => Resource.Layout.driverpage_layout;
 
@@ -74,6 +97,13 @@ namespace TimeToSchool
         {
             _recyclerView    = FindViewById<RecyclerView>(Resource.Id.cardsContainer);
             globalStatusText = FindViewById<TextView>(Resource.Id.globalStatusText);
+
+            _btnSimulate = FindViewById<Button>(Resource.Id.btnSimulateBus);
+            if (ProManager.DebugMode)
+            {
+                _btnSimulate.Visibility = ViewStates.Visible;
+                _btnSimulate.Click += async (s, e) => { if (_simulating) StopSimulation(); else await StartSimulation(); };
+            }
         }
 
         private void SetupServices()
@@ -123,6 +153,76 @@ namespace TimeToSchool
             SaveCardsIfRemembered();
         }
 
+        protected override void OnBeforeLogout() => StopAllActiveTrips();
+
+        protected override void OnDestroy()
+        {
+            StopSimulation();
+            base.OnDestroy();
+        }
+
+        #region Bus Simulation (Debug)
+
+        private async Task StartSimulation()
+        {
+            var route = await BusesRepository.GetBusRouteById("1Q5DZdPo7s1aqPHymZBo");
+            if (route == null)
+            {
+                Android.Util.Log.Debug(ProManager.TAG, "[SIM] bus route not found");
+                return;
+            }
+
+            _simRoute = new ActiveBus
+            {
+                SchoolName = route.School,
+                Town       = route.Town,
+                BusLine    = route.BusLine,
+                DriverId   = ProManager.CurrentUser?.Id ?? "sim",
+                DriverName = ProManager.CurrentUser?.FirstName ?? "Simulator",
+                Status     = "Active",
+                Date       = DateTime.Now.ToString("yyyy-MM-dd"),
+                IsVisible  = false,
+            };
+
+            _simulating = true;
+            _simIndex   = 0;
+            _btnSimulate.Text = "Stop Simulation";
+            _simHandler = new Handler(Looper.MainLooper);
+
+            AdvanceSimStep();
+        }
+
+        private void AdvanceSimStep()
+        {
+            if (!_simulating) return;
+
+            var wp = _simWaypoints[_simIndex % _simWaypoints.Length];
+            _simRoute.Latitude  = wp.Lat;
+            _simRoute.Longitude = wp.Lng;
+            _simIndex++;
+
+            _ = BusesRepository.UpdateBusLocation(_simRoute);
+            Android.Util.Log.Debug(ProManager.TAG, $"[SIM] step {_simIndex}: {wp.Lat},{wp.Lng}");
+
+            _simHandler.PostDelayed(AdvanceSimStep, 15_000);
+        }
+
+        private void StopSimulation()
+        {
+            if (!_simulating) return;
+            _simulating = false;
+            _simHandler?.RemoveCallbacksAndMessages(null);
+            _btnSimulate.Text = "Simulate Bus (DEBUG)";
+
+            if (_simRoute != null)
+            {
+                _simRoute.Status = "Inactive";
+                _ = BusesRepository.UpdateBusLocation(_simRoute);
+            }
+        }
+
+        #endregion
+
         private async void LoadInitialData()
         {
             _allRoutes = await BusesRepository.GetBusesCollection();
@@ -135,6 +235,17 @@ namespace TimeToSchool
             }
             else if (_driverCards.Count == 0)
                 _driverCards.Add(new DriverCardState { TripData = new ActiveBus() });
+
+            if (!TripTrackingService.IsRunning)
+            {
+                foreach (var card in _driverCards)
+                    card.IsDriving = false;
+                _isGlobalDriving = false;
+            }
+            else
+            {
+                _isGlobalDriving = _driverCards.Any(c => c.IsDriving);
+            }
 
             RefreshCards();
         }
@@ -163,7 +274,7 @@ namespace TimeToSchool
             {
                 state.IsDriving = false;
                 _isGlobalDriving = false;
-                locManager.RemoveUpdates(this);
+                StopService(new Intent(this, typeof(TripTrackingService)));
 
                 state.TripData.Status = "Inactive";
                 await BusesRepository.UpdateBusLocation(state.TripData);
@@ -191,10 +302,40 @@ namespace TimeToSchool
                 state.TripData.IsVisible = !(route?.FirstStopLat.HasValue == true
                                            && route.FirstStopLng.HasValue == true);
 
-                locManager.RequestLocationUpdates(LocationManager.NetworkProvider, 15000, 2, this);
+                ContextCompat.StartForegroundService(this, BuildTripServiceIntent(state.TripData, route));
                 await BusesRepository.UpdateBusLocation(state.TripData);
             }
             RefreshCards();
+        }
+
+        private void StopAllActiveTrips()
+        {
+            var activeDriving = _driverCards.Where(c => c.IsDriving).ToList();
+            if (activeDriving.Count == 0) return;
+
+            StopService(new Intent(this, typeof(TripTrackingService)));
+            _isGlobalDriving = false;
+
+            foreach (var card in activeDriving)
+            {
+                card.IsDriving = false;
+                card.TripData.Status = "Inactive";
+                _ = BusesRepository.UpdateBusLocation(card.TripData);
+            }
+            SaveCardsIfRemembered();
+        }
+
+        private Intent BuildTripServiceIntent(ActiveBus trip, BusRoute route)
+        {
+            var intent = new Intent(this, typeof(TripTrackingService));
+            intent.PutExtra("trip_json", JsonConvert.SerializeObject(trip));
+            if (route?.FirstStopLat.HasValue == true && route.FirstStopLng.HasValue == true)
+            {
+                intent.PutExtra("has_first_stop", true);
+                intent.PutExtra("first_stop_lat", route.FirstStopLat.Value);
+                intent.PutExtra("first_stop_lng", route.FirstStopLng.Value);
+            }
+            return intent;
         }
 
         private void OpenRouteSelectionDialog(DriverCardState state)
@@ -274,38 +415,7 @@ namespace TimeToSchool
 
         #region Location Listener
 
-        public void OnLocationChanged(Location location)
-        {
-            var activeCard = _driverCards.FirstOrDefault(c => c.IsDriving);
-            if (activeCard == null) return;
-
-            activeCard.TripData.Latitude  = location.Latitude;
-            activeCard.TripData.Longitude = location.Longitude;
-
-            if (!activeCard.TripData.IsVisible)
-                TryUnlockVisibility(activeCard.TripData, location);
-
-            _ = BusesRepository.UpdateBusLocation(activeCard.TripData);
-        }
-
-        private void TryUnlockVisibility(ActiveBus trip, Location current)
-        {
-            var route = _allRoutes?.FirstOrDefault(r =>
-                r.School  == trip.SchoolName &&
-                r.Town    == trip.Town &&
-                r.BusLine == trip.BusLine);
-
-            if (route?.FirstStopLat == null || route.FirstStopLng == null) return;
-
-            float[] dist = new float[1];
-            Location.DistanceBetween(
-                current.Latitude, current.Longitude,
-                route.FirstStopLat.Value, route.FirstStopLng.Value,
-                dist);
-
-            if (dist[0] <= 50f)
-                trip.IsVisible = true;
-        }
+        public void OnLocationChanged(Location location) { }
 
         public void OnProviderDisabled(string provider) { }
         public void OnProviderEnabled(string provider) { }

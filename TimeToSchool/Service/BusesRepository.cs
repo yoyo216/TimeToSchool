@@ -195,6 +195,28 @@ namespace TimeToSchool.Service
                 return false;
             }
         }
+        public static async Task<BusRoute> GetBusRouteById(string id)
+        {
+            try
+            {
+                var snap = (DocumentSnapshot)await FirebaseFirestore.Instance
+                    .Collection("BusRoutes").Document(id).Get();
+                if (!snap.Exists()) return null;
+                return new BusRoute
+                {
+                    Id      = snap.Id,
+                    School  = snap.Get("School").ToString(),
+                    Town    = snap.Get("Town").ToString(),
+                    BusLine = snap.Get("BusLine").ToString(),
+                };
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ProManager.TAG, $"GetBusRouteById failed: {ex.Message}");
+                return null;
+            }
+        }
+
         private static double? TryGetDouble(DocumentSnapshot snapshot, string field)
         {
             var obj = snapshot.Get(field);

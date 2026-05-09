@@ -277,11 +277,18 @@ namespace TimeToSchool.Fragments
         private bool MatchesSelection(ActiveBus bus)
         {
             if (!bus.IsVisible) return false;
+            if (bus.Status == "Active" && !IsTimestampFresh(bus.FirestoreDocId)) return false;
             if (!Eq(bus.SchoolName, _school)) return false;
             if (!Eq(bus.Town, _town)) return false;
             if (!string.IsNullOrEmpty(_busLine) && _busLine != "Any Available Bus")
                 if (!Eq(bus.BusLine, _busLine)) return false;
             return true;
+        }
+
+        private bool IsTimestampFresh(string docId)
+        {
+            if (!_busTimestampMs.TryGetValue(docId, out long tsMs) || tsMs == 0) return true;
+            return Java.Lang.JavaSystem.CurrentTimeMillis() - tsMs < 3 * 60 * 1000;
         }
 
         private static bool Eq(string a, string b) =>
@@ -412,13 +419,13 @@ namespace TimeToSchool.Fragments
         {
             var matching = _busData.Values.Where(MatchesRoute).ToList();
 
-            if (matching.Any(b => b.IsVisible && b.Status == "Active"))
+            if (matching.Any(b => b.IsVisible && b.Status == "Active" && IsTimestampFresh(b.FirestoreDocId)))
             {
                 ShowStatusText("בנסיעה");
                 return;
             }
 
-            var approaching = matching.Where(b => !b.IsVisible && b.Status == "Active").ToList();
+            var approaching = matching.Where(b => !b.IsVisible && b.Status == "Active" && IsTimestampFresh(b.FirestoreDocId)).ToList();
             if (approaching.Any())
             {
                 var etaTasks = approaching.Select(ComputeEtaAsync).ToList();

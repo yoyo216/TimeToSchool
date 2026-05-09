@@ -100,8 +100,11 @@ namespace TimeToSchool
                 Logout();
         }
 
+        protected virtual void OnBeforeLogout() { }
+
         private void Logout()
         {
+            OnBeforeLogout();
             new PreferenceService(this).ClearSession();
             FirebaseAuth.Instance.SignOut();
             ProManager.CurrentUser = null;

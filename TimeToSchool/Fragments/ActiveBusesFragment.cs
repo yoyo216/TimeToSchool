@@ -72,15 +72,17 @@ namespace TimeToSchool.Fragments
             _allBuses.Clear();
             foreach (DocumentSnapshot item in snapshot.Documents)
             {
+                var ts = item.GetTimestamp("lastUpdated");
                 _allBuses.Add(new ActiveBus
                 {
-                    SchoolName = item.Get("schoolName")?.ToString(),
-                    Town = item.Get("town")?.ToString(),
-                    BusLine = item.Get("busLine")?.ToString(),
-                    DriverName = item.Get("driverName")?.ToString(),
-                    DriverId = item.Get("driverId")?.ToString(),
-                    Status = item.Get("status")?.ToString(),
-                    Date = item.Get("date")?.ToString()
+                    SchoolName    = item.Get("schoolName")?.ToString(),
+                    Town          = item.Get("town")?.ToString(),
+                    BusLine       = item.Get("busLine")?.ToString(),
+                    DriverName    = item.Get("driverName")?.ToString(),
+                    DriverId      = item.Get("driverId")?.ToString(),
+                    Status        = item.Get("status")?.ToString(),
+                    Date          = item.Get("date")?.ToString(),
+                    LastUpdatedMs = ts != null ? ts.ToDate().Time : 0
                 });
             }
 
@@ -108,7 +110,7 @@ namespace TimeToSchool.Fragments
             }
 
             var sorted = filtered
-                .OrderByDescending(b => b.Status == "Active")
+                .OrderByDescending(b => IsEffectivelyActive(b))
                 .ThenBy(b => b.BusLine)
                 .ToList();
 
@@ -116,6 +118,13 @@ namespace TimeToSchool.Fragments
             _displayedBuses.AddRange(sorted);
             _adapter.NotifyDataSetChanged();
             _emptyView.Visibility = _displayedBuses.Count == 0 ? ViewStates.Visible : ViewStates.Gone;
+        }
+
+        private static bool IsEffectivelyActive(ActiveBus bus)
+        {
+            if (bus.Status != "Active") return false;
+            if (bus.LastUpdatedMs == 0) return true;
+            return Java.Lang.JavaSystem.CurrentTimeMillis() - bus.LastUpdatedMs < 3 * 60 * 1000;
         }
 
         public override void OnDestroyView()

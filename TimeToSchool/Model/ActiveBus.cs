@@ -28,6 +28,8 @@ namespace TimeToSchool.Model
         public bool IsVisible { get; set; } = true;
         public string FirestoreDocId { get; set; }
         public string LastUpdatedTime { get; set; }
+        [Newtonsoft.Json.JsonIgnore]
+        public long LastUpdatedMs { get; set; }
 
         // Helper to turn this object into a Firebase Map
         public HashMap ToMap()
