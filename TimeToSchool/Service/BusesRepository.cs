@@ -229,36 +229,18 @@ namespace TimeToSchool.Service
             return null;
         }
 
-        // use to filiter buses
-        public List<string> GetSchools(List<BusRoute> _allRoutes)
-        {
-            return _allRoutes.Select(r => r.School)
-                             .Distinct()
-                             .OrderBy(s => s)
-                             .ToList();
-        }
+        public static List<string> GetSchools(List<BusRoute> routes) =>
+            routes.Select(r => r.School).Distinct().OrderBy(s => s).ToList();
 
-        public List<string> GetTownsForSchool(List<BusRoute> _allRoutes, string schoolName)
-        {
-            return _allRoutes.Where(r => r.School == schoolName)
-                             .Select(r => r.Town)
-                             .Distinct()
-                             .OrderBy(t => t)
-                             .ToList();
-        }
+        public static List<string> GetTownsForSchool(List<BusRoute> routes, string schoolName) =>
+            routes.Where(r => r.School == schoolName).Select(r => r.Town).Distinct().OrderBy(t => t).ToList();
 
-        public List<string> GetBusesForRoute(List<BusRoute> _allRoutes, string school, string town)
+        public static List<string> GetBusesForRoute(List<BusRoute> routes, string school, string town)
         {
-            var buses = _allRoutes.Where(r => r.School == school && r.Town == town)
-                                  .Select(r => r.BusLine)
-                                  .OrderBy(b => b)
-                                  .ToList();
-
+            var buses = routes.Where(r => r.School == school && r.Town == town)
+                              .Select(r => r.BusLine).OrderBy(b => b).ToList();
             if (buses.Count > 0)
-            {
                 buses.Insert(0, "Any Available Bus");
-            }
-
             return buses;
         }
     }

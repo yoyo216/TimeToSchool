@@ -19,7 +19,7 @@ namespace TimeToSchool.Helpers
         {
             view.Enabled = isEnabled;
             view.Alpha = isEnabled ? 1.0f : 0.5f;
-            if (view.Parent.Parent is TextInputLayout parent) parent.Enabled = isEnabled;
+            if (view.Parent?.Parent is TextInputLayout parent) parent.Enabled = isEnabled;
         }
 
         public static void ConfigureSearchableField(AutoCompleteTextView view)

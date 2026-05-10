@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using TimeToSchool.Adapter;
 using TimeToSchool.BusinessLogic;
+using TimeToSchool.Helpers;
 using TimeToSchool.Model;
 using TimeToSchool.Service;
 
@@ -435,22 +436,22 @@ namespace TimeToSchool
             var autoBus    = dialog.FindViewById<AutoCompleteTextView>(Resource.Id.dialogAutoBus);
             var btnSave    = dialog.FindViewById<Button>(Resource.Id.btnSaveRoute);
 
-            ConfigureSearchableField(autoSchool);
-            ConfigureSearchableField(autoTown);
-            ConfigureSearchableField(autoBus);
+            UIHelper.ConfigureSearchableField(autoSchool);
+            UIHelper.ConfigureSearchableField(autoTown);
+            UIHelper.ConfigureSearchableField(autoBus);
 
-            autoSchool.Adapter = CreateAdapter(GetSchools(_allRoutes).ToArray());
-            SetDialogFieldEnabled(autoTown, false);
-            SetDialogFieldEnabled(autoBus, false);
+            autoSchool.Adapter = CreateAdapter(BusesRepository.GetSchools(_allRoutes).ToArray());
+            UIHelper.SetFieldEnabled(autoTown, false);
+            UIHelper.SetFieldEnabled(autoBus, false);
 
             autoSchool.ItemClick += (s, e) =>
             {
                 string selectedSchool = autoSchool.Text;
                 autoTown.Text = string.Empty;
                 autoBus.Text = string.Empty;
-                SetDialogFieldEnabled(autoTown, true);
-                SetDialogFieldEnabled(autoBus, false);
-                autoTown.Adapter = CreateAdapter(GetTownsForSchool(_allRoutes, selectedSchool).ToArray());
+                UIHelper.SetFieldEnabled(autoTown, true);
+                UIHelper.SetFieldEnabled(autoBus, false);
+                autoTown.Adapter = CreateAdapter(BusesRepository.GetTownsForSchool(_allRoutes, selectedSchool).ToArray());
                 autoTown.ShowDropDown();
                 ShowKeyboard(autoTown);
             };
@@ -458,17 +459,17 @@ namespace TimeToSchool
             autoTown.ItemClick += (s, e) =>
             {
                 autoBus.Text = string.Empty;
-                SetDialogFieldEnabled(autoBus, true);
-                autoBus.Adapter = CreateAdapter(GetBusesForRoute(_allRoutes, autoSchool.Text, autoTown.Text).ToArray());
+                UIHelper.SetFieldEnabled(autoBus, true);
+                autoBus.Adapter = CreateAdapter(BusesRepository.GetBusesForRoute(_allRoutes, autoSchool.Text, autoTown.Text).ToArray());
                 autoBus.ShowDropDown();
                 ShowKeyboard(autoBus);
             };
 
             btnSave.Click += (s, e) =>
             {
-                var validSchools = GetSchools(_allRoutes);
-                var validTowns   = GetTownsForSchool(_allRoutes, autoSchool.Text);
-                var validBuses   = GetBusesForRoute(_allRoutes, autoSchool.Text, autoTown.Text);
+                var validSchools = BusesRepository.GetSchools(_allRoutes);
+                var validTowns   = BusesRepository.GetTownsForSchool(_allRoutes, autoSchool.Text);
+                var validBuses   = BusesRepository.GetBusesForRoute(_allRoutes, autoSchool.Text, autoTown.Text);
 
                 if (!validSchools.Contains(autoSchool.Text))
                 {
@@ -518,49 +519,6 @@ namespace TimeToSchool
         private ArrayAdapter<string> CreateAdapter(string[] data) =>
             new SubstringArrayAdapter(this, Resource.Layout.dropdown_item, data);
 
-        private class SubstringArrayAdapter : ArrayAdapter<string>
-        {
-            private readonly List<string> _original;
-            private readonly SubstringFilter _filter;
-
-            public SubstringArrayAdapter(Context context, int resource, string[] items)
-                : base(context, resource, items.ToList())
-            {
-                _original = items.ToList();
-                _filter = new SubstringFilter(this);
-            }
-
-            public override Filter Filter => _filter;
-
-            private class SubstringFilter : Filter
-            {
-                private readonly SubstringArrayAdapter _adapter;
-                public SubstringFilter(SubstringArrayAdapter adapter) => _adapter = adapter;
-
-                protected override FilterResults PerformFiltering(Java.Lang.ICharSequence constraint)
-                {
-                    var query = constraint?.ToString().ToLower() ?? "";
-                    var count = string.IsNullOrEmpty(query)
-                        ? _adapter._original.Count
-                        : _adapter._original.Count(s => s.ToLower().Contains(query));
-                    return new FilterResults { Count = count };
-                }
-
-                protected override void PublishResults(Java.Lang.ICharSequence constraint, FilterResults results)
-                {
-                    var query = constraint?.ToString().ToLower() ?? "";
-                    var toShow = string.IsNullOrEmpty(query)
-                        ? _adapter._original
-                        : _adapter._original.Where(s => s.ToLower().Contains(query)).ToList();
-                    _adapter.SetNotifyOnChange(false);
-                    _adapter.Clear();
-                    foreach (var s in toShow)
-                        _adapter.Add(s);
-                    _adapter.NotifyDataSetChanged();
-                }
-            }
-        }
-
         private void ShowKeyboard(View view)
         {
             view.RequestFocus();
@@ -570,30 +528,6 @@ namespace TimeToSchool
                 imm.ShowSoftInput(view, ShowFlags.Implicit);
             }, 100);
         }
-
-        private void ConfigureSearchableField(AutoCompleteTextView view)
-        {
-            view.Threshold = 1;
-            view.Click += (s, e) => view.ShowDropDown();
-            view.FocusChange += (s, e) => { if (e.HasFocus) view.ShowDropDown(); };
-        }
-
-        private void SetDialogFieldEnabled(AutoCompleteTextView view, bool isEnabled)
-        {
-            view.Enabled = isEnabled;
-            view.Alpha = isEnabled ? 1.0f : 0.5f;
-            if (view.Parent?.Parent is TextInputLayout layout)
-                layout.Enabled = isEnabled;
-        }
-
-        public List<string> GetSchools(List<BusRoute> routes) =>
-            routes.Select(r => r.School).Distinct().OrderBy(s => s).ToList();
-
-        public List<string> GetTownsForSchool(List<BusRoute> routes, string school) =>
-            routes.Where(r => r.School == school).Select(r => r.Town).Distinct().OrderBy(t => t).ToList();
-
-        public List<string> GetBusesForRoute(List<BusRoute> routes, string school, string town) =>
-            routes.Where(r => r.School == school && r.Town == town).Select(r => r.BusLine).OrderBy(b => b).ToList();
 
         private class SwipeDeleteCallback : ItemTouchHelper.SimpleCallback
         {
@@ -638,13 +572,5 @@ namespace TimeToSchool
                 base.OnChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
             }
         }
-    }
-
-    public class DriverCardState
-    {
-        public string Id { get; set; } = Guid.NewGuid().ToString();
-        public string FirebaseDocumentId { get; set; }
-        public ActiveBus TripData { get; set; }
-        public bool IsDriving { get; set; } = false;
     }
 }

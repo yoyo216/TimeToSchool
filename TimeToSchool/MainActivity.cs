@@ -81,32 +81,24 @@ namespace TimeToSchool
             autoBus = FindViewById<AutoCompleteTextView>(Resource.Id.autoBus);
             btnFindBus = FindViewById<Button>(Resource.Id.btnFindBus);
 
-            SetFieldEnabled(autoTown, false);
-            SetFieldEnabled(autoBus, false);
+            UIHelper.SetFieldEnabled(autoTown, false);
+            UIHelper.SetFieldEnabled(autoBus, false);
             ValidateFields();
 
         }
 
         private void SetupAdapters()
         {
-            autoSchool.Adapter = CreateAdapter(GetSchools(_allRoutes).ToArray());
+            autoSchool.Adapter = CreateAdapter(BusesRepository.GetSchools(_allRoutes).ToArray());
             autoTown.Adapter = CreateAdapter(new string[] { });
             autoBus.Adapter = CreateAdapter(new string[] { });
         }
 
         private void SetupDropdownBehavior()
         {
-            ConfigureSearchableField(autoSchool);
-            ConfigureSearchableField(autoTown);
-            ConfigureSearchableField(autoBus);
-        }
-
-        private void SetFieldEnabled(AutoCompleteTextView view, bool isEnabled)
-        {
-            view.Enabled = isEnabled;
-            view.Alpha = isEnabled ? 1.0f : 0.5f;
-            if (view.Parent?.Parent is TextInputLayout layout)
-                layout.Enabled = isEnabled;
+            UIHelper.ConfigureSearchableField(autoSchool);
+            UIHelper.ConfigureSearchableField(autoTown);
+            UIHelper.ConfigureSearchableField(autoBus);
         }
 
         private void SetupEvents()
@@ -126,17 +118,17 @@ namespace TimeToSchool
         {
             autoTown.Text = string.Empty;
             autoBus.Text = string.Empty;
-            SetFieldEnabled(autoTown, true);
-            SetFieldEnabled(autoBus, false);
-            autoTown.Adapter = CreateAdapter(GetTownsForSchool(_allRoutes, autoSchool.Text).ToArray());
+            UIHelper.SetFieldEnabled(autoTown, true);
+            UIHelper.SetFieldEnabled(autoBus, false);
+            autoTown.Adapter = CreateAdapter(BusesRepository.GetTownsForSchool(_allRoutes, autoSchool.Text).ToArray());
             UIHelper.HideKeyboard(this);
         }
 
         private void OnTownSelected(object sender, AdapterView.ItemClickEventArgs e)
         {
             autoBus.Text = string.Empty;
-            SetFieldEnabled(autoBus, true);
-            autoBus.Adapter = CreateAdapter(GetBusesForRoute(_allRoutes, autoSchool.Text, autoTown.Text).ToArray());
+            UIHelper.SetFieldEnabled(autoBus, true);
+            autoBus.Adapter = CreateAdapter(BusesRepository.GetBusesForRoute(_allRoutes, autoSchool.Text, autoTown.Text).ToArray());
             UIHelper.HideKeyboard(this);
         }
 
@@ -164,14 +156,14 @@ namespace TimeToSchool
             if (string.IsNullOrEmpty(school)) return;
 
             autoSchool.Text = school;
-            SetFieldEnabled(autoTown, true);
-            autoTown.Adapter = CreateAdapter(GetTownsForSchool(_allRoutes, school).ToArray());
+            UIHelper.SetFieldEnabled(autoTown, true);
+            autoTown.Adapter = CreateAdapter(BusesRepository.GetTownsForSchool(_allRoutes, school).ToArray());
 
             if (!string.IsNullOrEmpty(town))
             {
                 autoTown.Text = town;
-                SetFieldEnabled(autoBus, true);
-                autoBus.Adapter = CreateAdapter(GetBusesForRoute(_allRoutes, school, town).ToArray());
+                UIHelper.SetFieldEnabled(autoBus, true);
+                autoBus.Adapter = CreateAdapter(BusesRepository.GetBusesForRoute(_allRoutes, school, town).ToArray());
 
                 if (!string.IsNullOrEmpty(busLine))
                     autoBus.Text = busLine;
@@ -186,27 +178,5 @@ namespace TimeToSchool
 
         private ArrayAdapter<string> CreateAdapter(string[] data) =>
             new ArrayAdapter<string>(this, Resource.Layout.dropdown_item, data);
-
-        private void ConfigureSearchableField(AutoCompleteTextView view)
-        {
-            view.Threshold = 1;
-            view.Click += (s, e) => view.ShowDropDown();
-            view.FocusChange += (s, e) => { if (e.HasFocus) view.ShowDropDown(); };
-        }
-
-        public List<string> GetSchools(List<BusRoute> routes) =>
-            routes.Select(r => r.School).Distinct().OrderBy(s => s).ToList();
-
-        public List<string> GetTownsForSchool(List<BusRoute> routes, string school) =>
-            routes.Where(r => r.School == school).Select(r => r.Town).Distinct().OrderBy(t => t).ToList();
-
-        public List<string> GetBusesForRoute(List<BusRoute> routes, string school, string town)
-        {
-            var buses = routes.Where(r => r.School == school && r.Town == town)
-                              .Select(r => r.BusLine).OrderBy(b => b).ToList();
-            if (buses.Count > 0)
-                buses.Insert(0, "Any Available Bus");
-            return buses;
-        }
     }
 }
