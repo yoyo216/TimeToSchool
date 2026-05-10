@@ -70,6 +70,24 @@ namespace TimeToSchool.Service
             return JsonConvert.DeserializeObject<List<DriverCardState>>(json);
         }
 
+        private const string LAST_SEARCH_SCHOOL = "last_search_school";
+        private const string LAST_SEARCH_TOWN   = "last_search_town";
+        private const string LAST_SEARCH_BUS    = "last_search_bus";
+
+        public void SaveLastSearch(string school, string town, string busLine)
+        {
+            _prefs.Edit()
+                .PutString(LAST_SEARCH_SCHOOL, school)
+                .PutString(LAST_SEARCH_TOWN, town)
+                .PutString(LAST_SEARCH_BUS, busLine)
+                .Apply();
+        }
+
+        public (string school, string town, string busLine) GetLastSearch() =>
+            (_prefs.GetString(LAST_SEARCH_SCHOOL, null),
+             _prefs.GetString(LAST_SEARCH_TOWN,   null),
+             _prefs.GetString(LAST_SEARCH_BUS,    null));
+
         public void ClearSession()
         {
             _prefs.Edit().Clear().Apply();

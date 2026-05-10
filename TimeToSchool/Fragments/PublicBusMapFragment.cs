@@ -40,10 +40,8 @@ namespace TimeToSchool.Fragments
         private DirectionsApiService _directionsApi;
         private List<BusRoute> _busRoutes;
         private TextView _tvStatusMessage;
-        private TextView _tvBusLineInfo;
         private HorizontalScrollView _hsvEtaChips;
         private LinearLayout _llEtaChips;
-        private string _selectedChipBusLine;
 
         public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
@@ -66,7 +64,6 @@ namespace TimeToSchool.Fragments
             view.FindViewById<TextView>(Resource.Id.tvHeaderLabel).Text =
                 $"{_school} - {_town} - {(anyBus ? "כל קו פנוי" : _busLine)}";
             _tvStatusMessage = view.FindViewById<TextView>(Resource.Id.tvStatusMessage);
-            _tvBusLineInfo   = view.FindViewById<TextView>(Resource.Id.tvBusLineInfo);
             _hsvEtaChips     = view.FindViewById<HorizontalScrollView>(Resource.Id.hsvEtaChips);
             _llEtaChips      = view.FindViewById<LinearLayout>(Resource.Id.llEtaChips);
             _tvStatusMessage.Text = "מאתר אוטובוסים...";
@@ -470,8 +467,6 @@ namespace TimeToSchool.Fragments
         private void ShowStatusText(string text)
         {
             _hsvEtaChips.Visibility = ViewStates.Gone;
-            _tvBusLineInfo.Visibility = ViewStates.Gone;
-            _selectedChipBusLine = null;
             _tvStatusMessage.Text = text;
             _tvStatusMessage.Visibility = ViewStates.Visible;
             _panelContentHeight = -1;
@@ -480,19 +475,17 @@ namespace TimeToSchool.Fragments
         private void ShowEtaChips((int? minutes, string busLine)[] entries)
         {
             _tvStatusMessage.Visibility = ViewStates.Gone;
-            _tvBusLineInfo.Visibility = ViewStates.Gone;
-            _selectedChipBusLine = null;
             _llEtaChips.RemoveAllViews();
 
             var prefix = new TextView(Context);
             prefix.Text = "בדרך: ";
             prefix.SetTextColor(Color.White);
-            prefix.SetPadding(0, DpToPx(4), 0, DpToPx(4));
+            prefix.SetPadding(0, DpToPx(4), DpToPx(4), DpToPx(4));
             _llEtaChips.AddView(prefix);
 
             foreach (var (minutes, busLine) in entries)
             {
-                string label = minutes.HasValue ? $"{minutes}" : "unknown";
+                string label = minutes.HasValue ? $"{minutes}" : "?";
                 var chip = new TextView(Context);
                 chip.Text = label;
                 chip.SetTextColor(Color.White);
@@ -504,26 +497,28 @@ namespace TimeToSchool.Fragments
                 chip.LayoutParameters = lp;
                 chip.SetPadding(DpToPx(10), DpToPx(4), DpToPx(10), DpToPx(4));
                 string capturedLine = busLine;
-                chip.Click += (s, e) =>
-                {
-                    if (_selectedChipBusLine == capturedLine)
-                    {
-                        _tvBusLineInfo.Visibility = ViewStates.Gone;
-                        _selectedChipBusLine = null;
-                    }
-                    else
-                    {
-                        _tvBusLineInfo.Text = $"קו {capturedLine}";
-                        _tvBusLineInfo.Visibility = ViewStates.Visible;
-                        _selectedChipBusLine = capturedLine;
-                    }
-                    _panelContentHeight = -1;
-                };
+                chip.Click += (s, e) => ShowBusLineTooltip((View)s, capturedLine);
                 _llEtaChips.AddView(chip);
             }
 
             _hsvEtaChips.Visibility = ViewStates.Visible;
             _panelContentHeight = -1;
+        }
+
+        private void ShowBusLineTooltip(View anchor, string busLine)
+        {
+            var tv = new TextView(Context);
+            tv.Text = $"קו {busLine}";
+            tv.SetTextColor(Color.White);
+            tv.SetBackgroundResource(Resource.Drawable.bg_eta_chip);
+            tv.SetPadding(DpToPx(14), DpToPx(8), DpToPx(14), DpToPx(8));
+
+            var popup = new Android.Widget.PopupWindow(
+                tv,
+                ViewGroup.LayoutParams.WrapContent,
+                ViewGroup.LayoutParams.WrapContent,
+                true);
+            popup.ShowAsDropDown(anchor, 0, -DpToPx(80));
         }
 
         private class PublicBusInfoWindowAdapter : Java.Lang.Object, GoogleMap.IInfoWindowAdapter

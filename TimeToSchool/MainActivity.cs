@@ -68,6 +68,7 @@ namespace TimeToSchool
                 SetupAdapters();
                 SetupDropdownBehavior();
                 SetupEvents();
+                RestoreLastSearch();
                 ValidateFields();
             }
             catch (Exception) { }
@@ -149,11 +150,32 @@ namespace TimeToSchool
 
         private void OnFindBusClicked()
         {
+            new PreferenceService(this).SaveLastSearch(autoSchool.Text, autoTown.Text, autoBus.Text);
             var intent = new Android.Content.Intent(this, typeof(PublicBusMapActivity));
             intent.PutExtra("school", autoSchool.Text);
             intent.PutExtra("town", autoTown.Text);
             intent.PutExtra("bus_line", autoBus.Text);
             StartActivity(intent);
+        }
+
+        private void RestoreLastSearch()
+        {
+            var (school, town, busLine) = new PreferenceService(this).GetLastSearch();
+            if (string.IsNullOrEmpty(school)) return;
+
+            autoSchool.Text = school;
+            SetFieldEnabled(autoTown, true);
+            autoTown.Adapter = CreateAdapter(GetTownsForSchool(_allRoutes, school).ToArray());
+
+            if (!string.IsNullOrEmpty(town))
+            {
+                autoTown.Text = town;
+                SetFieldEnabled(autoBus, true);
+                autoBus.Adapter = CreateAdapter(GetBusesForRoute(_allRoutes, school, town).ToArray());
+
+                if (!string.IsNullOrEmpty(busLine))
+                    autoBus.Text = busLine;
+            }
         }
 
         public override bool DispatchTouchEvent(MotionEvent ev)
