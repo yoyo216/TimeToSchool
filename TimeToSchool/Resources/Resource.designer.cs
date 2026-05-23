@@ -11687,13 +11687,16 @@ namespace TimeToSchool
 		{
 			
 			// aapt resource value: 0x7F0E0000
-			public const int ic_launcher = 2131623936;
+			public const int ic_app_logo = 2131623936;
 			
 			// aapt resource value: 0x7F0E0001
-			public const int ic_launcher_foreground = 2131623937;
+			public const int ic_launcher = 2131623937;
 			
 			// aapt resource value: 0x7F0E0002
-			public const int ic_launcher_round = 2131623938;
+			public const int ic_launcher_foreground = 2131623938;
+			
+			// aapt resource value: 0x7F0E0003
+			public const int ic_launcher_round = 2131623939;
 			
 			static Mipmap()
 			{
