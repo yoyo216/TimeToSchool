@@ -66,6 +66,11 @@ namespace TimeToSchool.Service
             _locManager = (LocationManager)GetSystemService(LocationService);
             _locManager.RequestLocationUpdates(LocationManager.NetworkProvider, 15000, 2, this);
 
+            var lastKnown = _locManager.GetLastKnownLocation(LocationManager.NetworkProvider)
+                         ?? _locManager.GetLastKnownLocation(LocationManager.GpsProvider);
+            if (lastKnown != null)
+                OnLocationChanged(lastKnown);
+
             return StartCommandResult.Sticky;
         }
 

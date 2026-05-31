@@ -380,7 +380,6 @@ namespace TimeToSchool
                                            && route.FirstStopLng.HasValue == true);
 
                 ContextCompat.StartForegroundService(this, BuildTripServiceIntent(state.TripData, route));
-                await BusesRepository.UpdateBusLocation(state.TripData);
             }
             RefreshCards();
         }
