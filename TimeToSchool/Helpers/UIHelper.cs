@@ -24,9 +24,44 @@ namespace TimeToSchool.Helpers
 
         public static void ConfigureSearchableField(AutoCompleteTextView view)
         {
-            view.Threshold = 1;
-            view.Click += (s, e) => view.ShowDropDown();
-            view.FocusChange += (s, e) => { if (e.HasFocus) view.ShowDropDown(); };
+            var keyboardReady = new bool[] { false };
+
+            view.FocusChange += (s, e) => {
+                if (e.HasFocus) {
+                    keyboardReady[0] = false;
+                    view.PostDelayed(() => {
+                        keyboardReady[0] = true;
+                        ShowAllItems(view);
+                    }, 350);
+                }
+            };
+
+            view.Click += (s, e) => {
+                if (keyboardReady[0])
+                    ShowAllItems(view);
+            };
+
+            view.AfterTextChanged += (s, e) => {
+                if (string.IsNullOrEmpty(view.Text) && keyboardReady[0])
+                    ShowAllItems(view);
+            };
+
+        }
+
+        private static void ShowAllItems(AutoCompleteTextView view)
+        {
+            var filter = (view.Adapter as IFilterable)?.Filter;
+            if (filter != null)
+                filter.InvokeFilter((string)null, new FilterListener(() => view.Post(() => view.ShowDropDown())));
+            else
+                view.Post(() => view.ShowDropDown());
+        }
+
+        private class FilterListener : Java.Lang.Object, Filter.IFilterListener
+        {
+            private readonly Action _onComplete;
+            public FilterListener(Action onComplete) { _onComplete = onComplete; }
+            public void OnFilterComplete(int count) => _onComplete();
         }
 
         public static void HideKeyboard(Activity activity)
