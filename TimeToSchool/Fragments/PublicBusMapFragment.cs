@@ -42,6 +42,9 @@ namespace TimeToSchool.Fragments
         private TextView _tvStatusMessage;
         private HorizontalScrollView _hsvEtaChips;
         private LinearLayout _llEtaChips;
+        private readonly Dictionary<string, Marker> _stopMarkers = new Dictionary<string, Marker>();
+        private readonly Dictionary<string, BusRoute> _stopMarkerRouteMap = new Dictionary<string, BusRoute>();
+        private readonly Dictionary<string, string> _stopEtaCache = new Dictionary<string, string>();
 
         public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
@@ -78,7 +81,7 @@ namespace TimeToSchool.Fragments
             mapFrag.GetMapAsync(this);
 
             view.FindViewById<FloatingActionButton>(Resource.Id.fabFocusAll)
-                .Click += (s, e) => FocusAllMarkers();
+                .Click += (s, e) => _ = FocusByPriority();
 
             view.FindViewById<FloatingActionButton>(Resource.Id.fabBack)
                 .Click += (s, e) => Activity?.Finish();
@@ -88,11 +91,13 @@ namespace TimeToSchool.Fragments
         {
             _map = googleMap;
             _map.SetInfoWindowAdapter(new PublicBusInfoWindowAdapter(
-                LayoutInflater.From(Context), _busData, _markers, _busTimestampMs));
+                LayoutInflater.From(Context), _busData, _markers, _busTimestampMs,
+                _stopMarkerRouteMap, _stopEtaCache));
             _map.SetOnMarkerClickListener(this);
             _map.CameraChange += (s, e) => UpdateBusIconForZoom(e.Position.Zoom);
             UpdateBusIconForZoom(_map.CameraPosition.Zoom);
             StartListening();
+            PlaceStopMarkersIfReady();
         }
 
         private int DpToPx(int dp) =>
@@ -245,10 +250,10 @@ namespace TimeToSchool.Fragments
                         _busData.Remove(staleId);
                         _busTimestampMs.Remove(staleId);
                     }
-                    if (!_hasAutoFocused && _markers.Count > 0)
+                    if (!_hasAutoFocused)
                     {
                         _hasAutoFocused = true;
-                        FocusAllMarkers(animate: false);
+                        _ = FocusByPriority(animate: false);
                     }
                     _ = UpdateStatusPanelAsync();
                 });
@@ -295,30 +300,59 @@ namespace TimeToSchool.Fragments
         private static bool Eq(string a, string b) =>
             string.Equals(a?.Trim(), b?.Trim(), StringComparison.OrdinalIgnoreCase);
 
-        public bool OnMarkerClick(Marker marker) => false;
-
-        private void FocusAllMarkers(bool animate = true)
+        public bool OnMarkerClick(Marker marker)
         {
-            if (_map == null || _markers.Count == 0) return;
-
-            var targets = _markers.Values.Where(m => m.Visible).ToList();
-            if (targets.Count == 0) targets = _markers.Values.ToList();
-
-            CameraUpdate update;
-            if (targets.Count == 1)
-                update = CameraUpdateFactory.NewLatLngZoom(targets[0].Position, 13f);
-            else
+            if (_stopMarkerRouteMap.TryGetValue(marker.Id, out var route))
             {
-                var builder = new LatLngBounds.Builder();
-                foreach (var marker in targets)
-                    builder.Include(marker.Position);
-                update = CameraUpdateFactory.NewLatLngBounds(builder.Build(), 200);
+                _ = ShowStopEtaAsync(marker, route);
+                return true;
             }
+            return false;
+        }
 
-            if (animate)
-                _map.AnimateCamera(update);
-            else
-                _map.MoveCamera(update);
+        private async Task FocusByPriority(bool animate = true)
+        {
+            if (_map == null) return;
+
+            var buses = _markers.Values.Where(m => m.Visible).ToList();
+            if (buses.Count > 0) { ApplyCameraToMarkers(buses, animate); return; }
+
+            var stops = _stopMarkers.Values.ToList();
+            if (stops.Count > 0) { ApplyCameraToMarkers(stops, animate, singleZoom: 12f); return; }
+
+            var loc = await Task.Run(() => TryGeocode(_town))
+                   ?? await Task.Run(() => TryGeocode(_school));
+            if (loc == null) return;
+
+            Activity?.RunOnUiThread(() =>
+            {
+                var update = CameraUpdateFactory.NewLatLngZoom(loc, 14f);
+                if (animate) _map.AnimateCamera(update); else _map.MoveCamera(update);
+            });
+        }
+
+        private void ApplyCameraToMarkers(List<Marker> targets, bool animate, float singleZoom = 13f)
+        {
+            CameraUpdate update = targets.Count == 1
+                ? CameraUpdateFactory.NewLatLngZoom(targets[0].Position, singleZoom)
+                : CameraUpdateFactory.NewLatLngBounds(
+                    targets.Aggregate(new LatLngBounds.Builder(),
+                        (b, m) => { b.Include(m.Position); return b; }).Build(),
+                    200);
+            if (animate) _map.AnimateCamera(update); else _map.MoveCamera(update);
+        }
+
+        private LatLng TryGeocode(string query)
+        {
+            if (string.IsNullOrEmpty(query)) return null;
+            try
+            {
+                var results = new Android.Locations.Geocoder(Context).GetFromLocationName(query, 1);
+                if (results?.Count > 0)
+                    return new LatLng(results[0].Latitude, results[0].Longitude);
+            }
+            catch { }
+            return null;
         }
 
         private void OnHandleTouch(object sender, View.TouchEventArgs e)
@@ -399,12 +433,16 @@ namespace TimeToSchool.Fragments
             _reg?.Remove();
             _reg = null;
             _listener = null;
+            foreach (var m in _stopMarkers.Values) m.Remove();
+            _stopMarkers.Clear();
+            _stopMarkerRouteMap.Clear();
             base.OnDestroyView();
         }
 
         private async Task FetchBusRoutesAsync()
         {
             _busRoutes = await BusesRepository.GetBusesCollection();
+            Activity?.RunOnUiThread(PlaceStopMarkersIfReady);
         }
 
         private bool MatchesRoute(ActiveBus bus)
@@ -521,27 +559,153 @@ namespace TimeToSchool.Fragments
             popup.ShowAsDropDown(anchor, 0, -DpToPx(80));
         }
 
+        private void PlaceStopMarkersIfReady()
+        {
+            if (_map == null || _busRoutes == null) return;
+            bool anyBus = string.IsNullOrEmpty(_busLine) || _busLine == "Any Available Bus";
+            var icon = CreateStopIcon();
+
+            foreach (var route in _busRoutes)
+            {
+                if (!Eq(route.School, _school)) continue;
+                if (!Eq(route.Town, _town)) continue;
+                if (!anyBus && !Eq(route.BusLine, _busLine)) continue;
+                if (route.FirstStopLat == null || route.FirstStopLng == null) continue;
+                if (_stopMarkers.ContainsKey(route.Id)) continue;
+
+                var marker = _map.AddMarker(
+                    new MarkerOptions()
+                        .SetPosition(new LatLng(route.FirstStopLat.Value, route.FirstStopLng.Value))
+                        .SetTitle(route.BusLine)
+                        .SetIcon(icon)
+                        .Anchor(0.5f, 1f));
+                _stopMarkers[route.Id] = marker;
+                _stopMarkerRouteMap[marker.Id] = route;
+            }
+
+            if (!_hasAutoFocused)
+            {
+                _hasAutoFocused = true;
+                _ = FocusByPriority(animate: false);
+            }
+        }
+
+        private BitmapDescriptor CreateStopIcon()
+        {
+            int sizeDp = 22;
+            int w = DpToPx(sizeDp);
+            int h = (int)(w * 1.4f);
+            var bmp = Bitmap.CreateBitmap(w, h, Bitmap.Config.Argb8888);
+            var canvas = new Canvas(bmp);
+
+            float cx = w / 2f;
+            float r  = w * 0.42f;
+            float cy = r + 2f;
+
+            var fill = new Paint { AntiAlias = true };
+            fill.Color = Color.ParseColor("#388E3C");
+
+            var tip = new Path();
+            tip.MoveTo(cx - r * 0.55f, cy + r * 0.55f);
+            tip.LineTo(cx + r * 0.55f, cy + r * 0.55f);
+            tip.LineTo(cx, h - 2f);
+            tip.Close();
+            canvas.DrawPath(tip, fill);
+            canvas.DrawCircle(cx, cy, r, fill);
+
+            var border = new Paint { AntiAlias = true };
+            border.SetStyle(Paint.Style.Stroke);
+            border.Color = Color.White;
+            border.StrokeWidth = Math.Max(2f, w * 0.08f);
+            canvas.DrawCircle(cx, cy, r - border.StrokeWidth / 2f, border);
+
+            return BitmapDescriptorFactory.FromBitmap(bmp);
+        }
+
+        private async Task ShowStopEtaAsync(Marker anchor, BusRoute route)
+        {
+            _stopEtaCache[anchor.Id] = "מחשב זמן הגעה...";
+            anchor.ShowInfoWindow();
+
+            var buses = _busData.Values
+                .Where(b => Eq(b.SchoolName, route.School) && Eq(b.Town, route.Town) &&
+                            Eq(b.BusLine, route.BusLine) && b.Status == "Active" &&
+                            IsTimestampFresh(b.FirestoreDocId))
+                .ToList();
+
+            if (!buses.Any())
+            {
+                _stopEtaCache[anchor.Id] = "אין אוטובוס פעיל כרגע";
+                anchor.ShowInfoWindow();
+                return;
+            }
+
+            var etas = await Task.WhenAll(buses.Select(ComputeEtaAsync));
+
+            Activity?.RunOnUiThread(() =>
+            {
+                var nums = new List<string>();
+                for (int i = 0; i < etas.Length; i++)
+                {
+                    var (minutes, _) = etas[i];
+                    if (!buses[i].IsVisible && minutes.HasValue)
+                        nums.Add(minutes.Value.ToString());
+                }
+                _stopEtaCache[anchor.Id] = nums.Count > 0
+                    ? string.Join(", ", nums) + " דקות"
+                    : "בדרך";
+                anchor.ShowInfoWindow();
+            });
+        }
+
         private class PublicBusInfoWindowAdapter : Java.Lang.Object, GoogleMap.IInfoWindowAdapter
         {
             private readonly LayoutInflater _inflater;
             private readonly Dictionary<string, ActiveBus> _busData;
             private readonly Dictionary<string, Marker> _markers;
             private readonly Dictionary<string, long> _timestamps;
+            private readonly Dictionary<string, BusRoute> _stopRouteMap;
+            private readonly Dictionary<string, string> _stopEtaCache;
 
             public PublicBusInfoWindowAdapter(
                 LayoutInflater inflater,
                 Dictionary<string, ActiveBus> busData,
                 Dictionary<string, Marker> markers,
-                Dictionary<string, long> timestamps)
+                Dictionary<string, long> timestamps,
+                Dictionary<string, BusRoute> stopRouteMap,
+                Dictionary<string, string> stopEtaCache)
             {
-                _inflater   = inflater;
-                _busData    = busData;
-                _markers    = markers;
-                _timestamps = timestamps;
+                _inflater     = inflater;
+                _busData      = busData;
+                _markers      = markers;
+                _timestamps   = timestamps;
+                _stopRouteMap = stopRouteMap;
+                _stopEtaCache = stopEtaCache;
             }
 
             public View GetInfoWindow(Marker marker)
             {
+                if (_stopRouteMap.TryGetValue(marker.Id, out var route))
+                {
+                    float density = _inflater.Context.Resources.DisplayMetrics.Density;
+                    int dp(int v) => (int)(v * density + 0.5f);
+
+                    var ll = new LinearLayout(_inflater.Context) { Orientation = Orientation.Vertical };
+                    ll.SetPadding(dp(16), dp(12), dp(16), dp(12));
+
+                    var tvLine = new TextView(_inflater.Context) { Text = $"קו {route.BusLine}" };
+                    tvLine.SetTypeface(null, Android.Graphics.TypefaceStyle.Bold);
+                    tvLine.TextSize = 15f;
+                    ll.AddView(tvLine);
+
+                    string etaText = _stopEtaCache.TryGetValue(marker.Id, out var t) ? t : "...";
+                    var tvEta = new TextView(_inflater.Context) { Text = etaText };
+                    tvEta.TextSize = 13f;
+                    ll.AddView(tvEta);
+
+                    return ll;
+                }
+
                 var entry = _markers.FirstOrDefault(kv => kv.Value.Id == marker.Id);
                 if (entry.Key == null || !_busData.TryGetValue(entry.Key, out var bus))
                     return null;
