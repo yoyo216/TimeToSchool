@@ -8,6 +8,7 @@ using Android.Views;
 using Android.Views.InputMethods;
 using Android.Widget;
 using AndroidX.Core.Content;
+using AndroidX.Core.Graphics.Drawable;
 using AndroidX.RecyclerView.Widget;
 using Google.Android.Material.TextField;
 using System;
@@ -32,13 +33,14 @@ namespace TimeToSchool
         private DriverCardAdapter _adapter;
         private ItemTouchHelper _touchHelper;
         private TextView globalStatusText;
-        private TextView _infoPanelDriverName;
-        private TextView _infoPanelStatus;
-        private TextView _infoPanelStateChip;
-        private TextView _infoPanelRoute;
-        private TextView _infoPanelVisibilityStatus;
-        private View _infoPanelDivider;
-        private LinearLayout _infoPanelDrivingSection;
+        private TextView _tvGreeting;
+        private LinearLayout _chipStatus;
+        private Android.Views.View _dotStatus;
+        private TextView _tvStatus;
+        private LinearLayout _chipVisibility;
+        private Android.Views.View _dotVisibility;
+        private TextView _tvVisibility;
+        private TextView _tvRouteInfo;
 
         private LocationManager locManager;
         private PreferenceService _prefService;
@@ -106,15 +108,17 @@ namespace TimeToSchool
 
         private void InitViews()
         {
-            _recyclerView        = FindViewById<RecyclerView>(Resource.Id.cardsContainer);
-            globalStatusText     = FindViewById<TextView>(Resource.Id.globalStatusText);
-            _infoPanelDriverName      = FindViewById<TextView>(Resource.Id.infoPanelDriverName);
-            _infoPanelStatus          = FindViewById<TextView>(Resource.Id.infoPanelStatus);
-            _infoPanelStateChip       = FindViewById<TextView>(Resource.Id.infoPanelStateChip);
-            _infoPanelRoute           = FindViewById<TextView>(Resource.Id.infoPanelRoute);
-            _infoPanelVisibilityStatus= FindViewById<TextView>(Resource.Id.infoPanelVisibilityStatus);
-            _infoPanelDivider         = FindViewById<View>(Resource.Id.infoPanelDivider);
-            _infoPanelDrivingSection  = FindViewById<LinearLayout>(Resource.Id.infoPanelDrivingSection);
+            _recyclerView    = FindViewById<RecyclerView>(Resource.Id.cardsContainer);
+            globalStatusText = FindViewById<TextView>(Resource.Id.globalStatusText);
+            _tvGreeting      = FindViewById<TextView>(Resource.Id.tvGreeting);
+            _chipStatus      = FindViewById<LinearLayout>(Resource.Id.chipStatus);
+            _dotStatus       = FindViewById<Android.Views.View>(Resource.Id.dotStatus);
+            _tvStatus        = FindViewById<TextView>(Resource.Id.tvStatus);
+            _chipVisibility  = FindViewById<LinearLayout>(Resource.Id.chipVisibility);
+            _dotVisibility   = FindViewById<Android.Views.View>(Resource.Id.dotVisibility);
+            _tvVisibility    = FindViewById<TextView>(Resource.Id.tvVisibility);
+            _tvRouteInfo     = FindViewById<TextView>(Resource.Id.tvNoRoute);
+
             UpdateInfoPanel();
 
             _btnSimulate = FindViewById<Button>(Resource.Id.btnSimulateBus);
@@ -305,40 +309,59 @@ namespace TimeToSchool
 
         private void UpdateInfoPanel()
         {
-            var user = ProManager.CurrentUser;
-            if (user != null)
-                _infoPanelDriverName.Text = $"שלום, {user.FirstName} {user.LastName}";
-
-            int total  = _driverCards?.Count ?? 0;
-            int active = _driverCards?.Count(c => c.IsDriving) ?? 0;
+            var name = ProManager.CurrentUser?.FirstName;
+            _tvGreeting.Text = string.IsNullOrEmpty(name)
+                ? GetTimeGreeting()
+                : $"{GetTimeGreeting()}, {name}";
 
             if (_isGlobalDriving)
             {
-                _infoPanelStateChip.Text = "נוסע";
-                _infoPanelStatus.Text    = $"נסיעה פעילה · {active}/{total} קוים";
+                SetChip(_chipStatus, _dotStatus, _tvStatus, "#22C55E", "#16A34A", "#FFFFFF", "נוסע");
 
                 var drivingCard = _driverCards?.FirstOrDefault(c => c.IsDriving);
                 if (drivingCard != null)
                 {
                     var t = drivingCard.TripData;
-                    _infoPanelRoute.Text = $"{t.SchoolName}  ←  {t.Town}  ←  {t.BusLine}";
+                    _tvRouteInfo.Text = $"{t.SchoolName} · {t.Town} · קו {t.BusLine}";
+                    _tvRouteInfo.SetTextColor(Color.ParseColor("#1E293B"));
 
-                    bool isVisible = t.IsVisible;
-                    _infoPanelVisibilityStatus.Text      = isVisible ? "גלוי לציבור: ✓ כן" : "גלוי לציבור: ✗ לא עדיין";
-                    _infoPanelVisibilityStatus.SetTextColor(
-                        Android.Graphics.Color.ParseColor(isVisible ? "#69F0AE" : "#FF7043"));
+                    if (t.IsVisible)
+                        SetChip(_chipVisibility, _dotVisibility, _tvVisibility, "#A855F7", "#7C3AED", "#FFFFFF", "גלוי לציבור");
+                    else
+                        SetChip(_chipVisibility, _dotVisibility, _tvVisibility, "#334155", "#94A3B8", "#CBD5E1", "מוסתר");
                 }
-
-                _infoPanelDivider.Visibility        = ViewStates.Visible;
-                _infoPanelDrivingSection.Visibility = ViewStates.Visible;
             }
             else
             {
-                _infoPanelStateChip.Text            = "מוכן";
-                _infoPanelStatus.Text               = $"{total} קוים טעונים · מוכן לנסיעה";
-                _infoPanelDivider.Visibility        = ViewStates.Gone;
-                _infoPanelDrivingSection.Visibility = ViewStates.Gone;
+                SetChip(_chipStatus,     _dotStatus,     _tvStatus,     "#334155", "#94A3B8", "#CBD5E1", "המתנה");
+                SetChip(_chipVisibility, _dotVisibility, _tvVisibility, "#334155", "#94A3B8", "#CBD5E1", "מוסתר");
+                _tvRouteInfo.Text = "לא נבחר מסלול";
+                _tvRouteInfo.SetTextColor(Color.ParseColor("#94A3B8"));
             }
+        }
+
+        private void SetChip(LinearLayout chip, Android.Views.View dot, TextView label,
+                              string chipHex, string dotHex, string textHex, string text)
+        {
+            var chipBg = ContextCompat.GetDrawable(this, Resource.Drawable.bg_chip).Mutate();
+            DrawableCompat.SetTint(chipBg, Color.ParseColor(chipHex));
+            chip.Background = chipBg;
+
+            var dotBg = ContextCompat.GetDrawable(this, Resource.Drawable.shape_dot).Mutate();
+            DrawableCompat.SetTint(dotBg, Color.ParseColor(dotHex));
+            dot.Background = dotBg;
+
+            label.Text = text;
+            label.SetTextColor(Color.ParseColor(textHex));
+        }
+
+        private static string GetTimeGreeting()
+        {
+            int h = DateTime.Now.Hour;
+            if (h >= 5 && h < 12)  return "בוקר טוב";
+            if (h >= 12 && h < 17) return "צהריים טובים";
+            if (h >= 17 && h < 21) return "ערב טוב";
+            return "לילה טוב";
         }
 
         #endregion
@@ -539,7 +562,8 @@ namespace TimeToSchool
             {
                 _ctx = ctx;
                 _onDelete = onDelete;
-                _bgPaint.Color = Color.ParseColor("#F44336");
+                _bgPaint.Color = Color.ParseColor("#EF4444");
+                _bgPaint.AntiAlias = true;
             }
 
             public override bool OnMove(RecyclerView rv, RecyclerView.ViewHolder vh,
@@ -553,10 +577,14 @@ namespace TimeToSchool
                 int actionState, bool isCurrentlyActive)
             {
                 var iv = viewHolder.ItemView;
+                float radius = 12f * _ctx.Resources.DisplayMetrics.Density;
 
-                c.DrawRect(iv.Left, iv.Top, iv.Left + dX, iv.Bottom, _bgPaint);
+                // Draw rounded rect over the full card bounds — the translated card covers
+                // the right portion, leaving a rounded red strip that matches the card shape.
+                var bg = new Android.Graphics.RectF(iv.Left, iv.Top, iv.Right, iv.Bottom);
+                c.DrawRoundRect(bg, radius, radius, _bgPaint);
 
-                var icon = ContextCompat.GetDrawable(_ctx, Android.Resource.Drawable.IcMenuDelete);
+                var icon = ContextCompat.GetDrawable(_ctx, Resource.Drawable.ic_trash_white);
                 if (icon != null)
                 {
                     int margin   = (iv.Height - icon.IntrinsicHeight) / 2;

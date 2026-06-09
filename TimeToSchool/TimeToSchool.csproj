@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -27,6 +27,7 @@
     <AndroidUseAapt2>true</AndroidUseAapt2>
     <AndroidHttpClientHandlerType>Xamarin.Android.Net.AndroidClientHandler</AndroidHttpClientHandlerType>
   </PropertyGroup>
+
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
     <DebugType>portable</DebugType>
@@ -42,6 +43,7 @@
     <AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
     <BundleAssemblies>false</BundleAssemblies>
   </PropertyGroup>
+
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
     <DebugType>portable</DebugType>
@@ -55,6 +57,8 @@
     <AndroidLinkMode>SdkOnly</AndroidLinkMode>
     <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
   </PropertyGroup>
+
+  <!-- Assembly references -->
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Xml" />
@@ -63,7 +67,48 @@
     <Reference Include="System.Numerics" />
     <Reference Include="System.Numerics.Vectors" />
   </ItemGroup>
+
+  <!-- NuGet packages -->
   <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="Xamarin.AndroidX.AppCompat" Version="1.2.0.5" />
+    <PackageReference Include="Xamarin.AndroidX.RecyclerView" Version="1.1.0.1" />
+    <PackageReference Include="Xamarin.Firebase.Auth" Version="121.0.1.1" />
+    <PackageReference Include="Xamarin.Firebase.Common" Version="120.3.3.3" />
+    <PackageReference Include="Xamarin.Firebase.Firestore" Version="124.5.0" />
+    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.8.0" />
+    <PackageReference Include="Xamarin.Essentials" Version="1.6.1" />
+    <PackageReference Include="Xamarin.GooglePlayServices.Maps" Version="118.1.0.4" />
+  </ItemGroup>
+
+  <!-- C# source files -->
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Resources\Resource.designer.cs" />
+    <Compile Include="MainActivity.cs" />
+    <Compile Include="SignInActivity.cs" />
+    <Compile Include="SignUpActivity.cs" />
+    <Compile Include="BaseDrawerActivity.cs" />
+    <Compile Include="AdminMainActivity.cs" />
+    <Compile Include="DriverActivity.cs" />
+    <Compile Include="BusMapActivity.cs" />
+    <Compile Include="MapPickerActivity.cs" />
+    <Compile Include="PublicBusMapActivity.cs" />
+    <Compile Include="PendingApprovalActivity.cs" />
+    <Compile Include="BusinessLogic\ProManager.cs" />
+    <Compile Include="Model\ActiveBus.cs" />
+    <Compile Include="Model\BannedEmail.cs" />
+    <Compile Include="Model\BusRoute.cs" />
+    <Compile Include="Model\DriverCardState.cs" />
+    <Compile Include="Model\User.cs" />
+    <Compile Include="Service\FireBaseHelper.cs" />
+    <Compile Include="Service\PreferenceService.cs" />
+    <Compile Include="Service\UsersRepository.cs" />
+    <Compile Include="Service\BusesRepository.cs" />
+    <Compile Include="Service\BannedEmailsRepository.cs" />
+    <Compile Include="Service\TripTrackingService.cs" />
+    <Compile Include="Service\DirectionsApiService.cs" />
+    <Compile Include="Service\RoadsApiService.cs" />
     <Compile Include="Adapter\ActiveBusViewAdapter.cs" />
     <Compile Include="Adapter\BannedEmailsRViewAdapter.cs" />
     <Compile Include="Adapter\BusPagerAdapter.cs" />
@@ -72,10 +117,6 @@
     <Compile Include="Adapter\PendingRequestsRViewAdapter.cs" />
     <Compile Include="Adapter\UsersRViewAdapter.cs" />
     <Compile Include="Adapter\UserViewHolder.cs.cs" />
-    <Compile Include="AdminMainActivity.cs" />
-    <Compile Include="BusinessLogic\ProManager.cs" />
-    <Compile Include="BusMapActivity.cs" />
-    <Compile Include="DriverActivity.cs" />
     <Compile Include="Fragments\ActiveBusesFragment.cs" />
     <Compile Include="Fragments\AllBusesFragment.cs" />
     <Compile Include="Fragments\BannedUsersFragment.cs" />
@@ -86,202 +127,125 @@
     <Compile Include="Fragments\PublicBusMapFragment.cs" />
     <Compile Include="Fragments\UsersManagementFragment.cs" />
     <Compile Include="Helpers\RoleRouter.cs" />
-    <Compile Include="Helpers\UIHelper.cs" />
-    <Compile Include="MapPickerActivity.cs" />
-    <Compile Include="Model\ActiveBus.cs" />
-    <Compile Include="Model\BannedEmail.cs" />
-    <Compile Include="Model\BusRoute.cs" />
-    <Compile Include="Model\DriverCardState.cs" />
-    <Compile Include="Model\User.cs" />
-    <Compile Include="PendingApprovalActivity.cs" />
-    <Compile Include="PublicBusMapActivity.cs" />
-    <Compile Include="Service\BannedEmailsRepository.cs" />
-    <Compile Include="Service\BusesRepository.cs" />
-    <Compile Include="Service\TripTrackingService.cs" />
-    <Compile Include="MainActivity.cs" />
-    <Compile Include="Resources\Resource.designer.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Helpers\SelectionValidator.cs" />
     <Compile Include="Helpers\SubstringArrayAdapter.cs" />
-    <Compile Include="Service\FireBaseHelper.cs" />
-    <Compile Include="Service\PreferenceService.cs" />
-    <Compile Include="Service\DirectionsApiService.cs" />
-    <Compile Include="Service\RoadsApiService.cs" />
-    <Compile Include="Service\UsersRepository.cs" />
-    <Compile Include="SignInActivity.cs" />
-    <Compile Include="SignUpActivity.cs" />
-    <Compile Include="BaseDrawerActivity.cs" />
+    <Compile Include="Helpers\UIHelper.cs" />
   </ItemGroup>
+
+  <!-- Assets -->
   <ItemGroup>
     <AndroidAsset Include="Assets\googleservices.json" />
     <AndroidAsset Include="Assets\schools.json" />
-    <None Include="project.nuget.cache" />
-    <None Include="Resources\AboutResources.txt" />
-    <None Include="Properties\AndroidManifest.xml" />
     <None Include="Assets\AboutAssets.txt" />
+    <None Include="Properties\AndroidManifest.xml" />
+    <None Include="Resources\AboutResources.txt" />
     <None Include="Resources\values\secrets.xml.template" />
+    <None Include="project.nuget.cache" />
   </ItemGroup>
+
+  <!-- Drawable resources -->
   <ItemGroup>
-    <AndroidResource Include="Resources\layout\activity_main.xml">
-      <SubType>Designer</SubType>
-    </AndroidResource>
+    <AndroidResource Include="Resources\drawable\bg_chip.xml" />
+    <AndroidResource Include="Resources\drawable\bg_eta_chip.xml" />
+    <AndroidResource Include="Resources\drawable\bg_grab_handle.xml" />
+    <AndroidResource Include="Resources\drawable\bg_info_box.xml" />
+    <AndroidResource Include="Resources\drawable\bg_route_info_box.xml" />
+    <AndroidResource Include="Resources\drawable\bg_top_panel.xml" />
+    <AndroidResource Include="Resources\drawable\ic_arrow_left.xml" />
+    <AndroidResource Include="Resources\drawable\ic_arrow_right.xml" />
+    <AndroidResource Include="Resources\drawable\ic_backgound_bus.png" />
+    <AndroidResource Include="Resources\drawable\ic_bus_small.xml" />
+    <AndroidResource Include="Resources\drawable\ic_femaleicon.png" />
+    <AndroidResource Include="Resources\drawable\ic_icon_bus.png" />
+    <AndroidResource Include="Resources\drawable\ic_icon_person.png" />
+    <AndroidResource Include="Resources\drawable\ic_maleicon.png" />
+    <AndroidResource Include="Resources\drawable\ic_pin.xml" />
+    <AndroidResource Include="Resources\drawable\ic_plus.xml" />
+    <AndroidResource Include="Resources\drawable\ic_school.xml" />
+    <AndroidResource Include="Resources\drawable\ic_trash_white.xml" />
+    <AndroidResource Include="Resources\drawable\info_panel_bg.xml" />
+    <AndroidResource Include="Resources\drawable\shadow_panel_bottom.xml" />
+    <AndroidResource Include="Resources\drawable\shape_avatar_bg.xml" />
+    <AndroidResource Include="Resources\drawable\shape_dot.xml" />
+    <AndroidResource Include="Resources\drawable\shape_pulse_dot.xml" />
+  </ItemGroup>
+
+  <!-- Layout resources -->
+  <ItemGroup>
+    <AndroidResource Include="Resources\layout\active_bus_item_card.xml" />
+    <AndroidResource Include="Resources\layout\activity_bus_map.xml" />
+    <AndroidResource Include="Resources\layout\activity_main.xml" />
+    <AndroidResource Include="Resources\layout\activity_map_picker.xml" />
+    <AndroidResource Include="Resources\layout\activity_public_bus_map.xml" />
+    <AndroidResource Include="Resources\layout\adminpage_layout.xml" />
+    <AndroidResource Include="Resources\layout\banned_email_item.xml" />
+    <AndroidResource Include="Resources\layout\bus_item_card.xml" />
+    <AndroidResource Include="Resources\layout\dialog_bus_form.xml" />
+    <AndroidResource Include="Resources\layout\dialog_edit_user.xml" />
+    <AndroidResource Include="Resources\layout\dialog_route_selector.xml" />
+    <AndroidResource Include="Resources\layout\drawer_base.xml" />
+    <AndroidResource Include="Resources\layout\driver_route_item.xml" />
+    <AndroidResource Include="Resources\layout\driverpage_layout.xml" />
+    <AndroidResource Include="Resources\layout\dropdown_item.xml" />
+    <AndroidResource Include="Resources\layout\fragment_active_buses.xml" />
+    <AndroidResource Include="Resources\layout\fragment_all_buses.xml" />
+    <AndroidResource Include="Resources\layout\fragment_banned_users.xml" />
+    <AndroidResource Include="Resources\layout\fragment_bus_info_sheet.xml" />
+    <AndroidResource Include="Resources\layout\fragment_bus_map.xml" />
+    <AndroidResource Include="Resources\layout\fragment_buses_management.xml" />
+    <AndroidResource Include="Resources\layout\fragment_pending_requests.xml" />
+    <AndroidResource Include="Resources\layout\fragment_public_bus_info.xml" />
+    <AndroidResource Include="Resources\layout\fragment_public_bus_map.xml" />
+    <AndroidResource Include="Resources\layout\fragment_users_management.xml" />
+    <AndroidResource Include="Resources\layout\nav_header.xml" />
+    <AndroidResource Include="Resources\layout\pending_approval_layout.xml" />
+    <AndroidResource Include="Resources\layout\pending_request_item.xml" />
+    <AndroidResource Include="Resources\layout\signin_layout.xml" />
+    <AndroidResource Include="Resources\layout\signup_layout.xml" />
+    <AndroidResource Include="Resources\layout\usercard_item.xml" />
+    <AndroidBoundLayout Include="Resources\layout\fb_progressbar.xml" />
+  </ItemGroup>
+
+  <!-- Menu resources -->
+  <ItemGroup>
+    <AndroidResource Include="Resources\menu\driver_menu.xml" />
+    <AndroidResource Include="Resources\menu\nav_drawer_menu.xml" />
+  </ItemGroup>
+
+  <!-- Values resources -->
+  <ItemGroup>
     <AndroidResource Include="Resources\values\colors.xml" />
     <AndroidResource Include="Resources\values\ic_launcher_background.xml" />
+    <AndroidResource Include="Resources\values\secrets.xml" />
     <AndroidResource Include="Resources\values\strings.xml" />
     <AndroidResource Include="Resources\values\styles.xml" />
+  </ItemGroup>
+
+  <!-- Mipmap resources -->
+  <ItemGroup>
     <AndroidResource Include="Resources\mipmap-anydpi-v26\ic_launcher.xml" />
     <AndroidResource Include="Resources\mipmap-anydpi-v26\ic_launcher_round.xml" />
+    <AndroidResource Include="Resources\mipmap-hdpi\ic_app_logo.png" />
     <AndroidResource Include="Resources\mipmap-hdpi\ic_launcher.png" />
     <AndroidResource Include="Resources\mipmap-hdpi\ic_launcher_foreground.png" />
     <AndroidResource Include="Resources\mipmap-hdpi\ic_launcher_round.png" />
+    <AndroidResource Include="Resources\mipmap-mdpi\ic_app_logo.png" />
     <AndroidResource Include="Resources\mipmap-mdpi\ic_launcher.png" />
     <AndroidResource Include="Resources\mipmap-mdpi\ic_launcher_foreground.png" />
     <AndroidResource Include="Resources\mipmap-mdpi\ic_launcher_round.png" />
+    <AndroidResource Include="Resources\mipmap-xhdpi\ic_app_logo.png" />
     <AndroidResource Include="Resources\mipmap-xhdpi\ic_launcher.png" />
     <AndroidResource Include="Resources\mipmap-xhdpi\ic_launcher_foreground.png" />
     <AndroidResource Include="Resources\mipmap-xhdpi\ic_launcher_round.png" />
+    <AndroidResource Include="Resources\mipmap-xxhdpi\ic_app_logo.png" />
     <AndroidResource Include="Resources\mipmap-xxhdpi\ic_launcher.png" />
     <AndroidResource Include="Resources\mipmap-xxhdpi\ic_launcher_foreground.png" />
     <AndroidResource Include="Resources\mipmap-xxhdpi\ic_launcher_round.png" />
+    <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_app_logo.png" />
     <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher.png" />
     <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher_foreground.png" />
     <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher_round.png" />
   </ItemGroup>
-  <ItemGroup />
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json">
-      <Version>13.0.4</Version>
-    </PackageReference>
-    <PackageReference Include="Xamarin.AndroidX.AppCompat" Version="1.2.0.5" />
-    <PackageReference Include="Xamarin.AndroidX.RecyclerView">
-      <Version>1.1.0.1</Version>
-    </PackageReference>
-    <PackageReference Include="Xamarin.Firebase.Auth">
-      <Version>121.0.1.1</Version>
-    </PackageReference>
-    <PackageReference Include="Xamarin.Firebase.Common">
-      <Version>120.3.3.3</Version>
-    </PackageReference>
-    <PackageReference Include="Xamarin.Firebase.Firestore">
-      <Version>124.5.0</Version>
-    </PackageReference>
-    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.8.0" />
-    <PackageReference Include="Xamarin.Essentials" Version="1.6.1" />
-    <PackageReference Include="Xamarin.GooglePlayServices.Maps">
-      <Version>118.1.0.4</Version>
-    </PackageReference>
-  </ItemGroup>
-  <ItemGroup>
-    <AndroidResource Include="Resources\drawable\ic_backgound_bus.png" />
-    <AndroidResource Include="Resources\drawable\ic_icon_bus.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <AndroidResource Include="Resources\drawable\ic_icon_person.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <AndroidResource Include="Resources\layout\signin_layout.xml">
-      <SubType>Designer</SubType>
-    </AndroidResource>
-  </ItemGroup>
-  <ItemGroup>
-    <AndroidResource Include="Resources\layout\dropdown_item.xml">
-      <SubType>Designer</SubType>
-    </AndroidResource>
-  </ItemGroup>
-  <ItemGroup>
-    <AndroidBoundLayout Include="Resources\layout\fb_progressbar.xml">
-      <SubType>Designer</SubType>
-    </AndroidBoundLayout>
-  </ItemGroup>
-  <ItemGroup>
-    <AndroidResource Include="Resources\layout\signup_layout.xml">
-      <SubType>Designer</SubType>
-    </AndroidResource>
-  </ItemGroup>
-  <ItemGroup>
-    <AndroidResource Include="Resources\layout\driverpage_layout.xml">
-      <SubType>Designer</SubType>
-    </AndroidResource>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Resources\drawable\ic_femaleicon.png" />
-    <AndroidResource Include="Resources\drawable\ic_maleicon.png" />
-    <AndroidResource Include="Resources\layout\usercard_item.xml">
-      <SubType>Designer</SubType>
-    </AndroidResource>
-    <AndroidResource Include="Resources\layout\fragment_users_management.xml">
-      <SubType>Designer</SubType>
-    </AndroidResource>
-    <AndroidResource Include="Resources\layout\adminpage_layout.xml">
-      <SubType>Designer</SubType>
-    </AndroidResource>
-    <AndroidResource Include="Resources\layout\fragment_buses_management.xml">
-      <SubType>Designer</SubType>
-    </AndroidResource>
-    <AndroidResource Include="Resources\layout\dialog_bus_form.xml">
-      <SubType>Designer</SubType>
-    </AndroidResource>
-    <AndroidResource Include="Resources\layout\fragment_all_buses.xml">
-      <SubType>Designer</SubType>
-    </AndroidResource>
-    <AndroidResource Include="Resources\layout\bus_item_card.xml">
-      <SubType>Designer</SubType>
-    </AndroidResource>
-    <AndroidResource Include="Resources\layout\active_bus_item_card.xml">
-      <SubType>Designer</SubType>
-    </AndroidResource>
-    <AndroidResource Include="Resources\layout\fragment_active_buses.xml">
-      <SubType>Designer</SubType>
-    </AndroidResource>
-    <AndroidResource Include="Resources\layout\driver_route_item.xml">
-      <SubType>Designer</SubType>
-    </AndroidResource>
-    <AndroidResource Include="Resources\layout\dialog_route_selector.xml">
-      <SubType>Designer</SubType>
-    </AndroidResource>
-    <AndroidResource Include="Resources\layout\drawer_base.xml">
-      <SubType>Designer</SubType>
-    </AndroidResource>
-    <AndroidResource Include="Resources\layout\nav_header.xml">
-      <SubType>Designer</SubType>
-    </AndroidResource>
-    <AndroidResource Include="Resources\menu\nav_drawer_menu.xml" />
-    <AndroidResource Include="Resources\menu\driver_menu.xml" />
-    <AndroidResource Include="Resources\drawable\ic_arrow_left.xml" />
-    <AndroidResource Include="Resources\drawable\ic_arrow_right.xml" />
-    <AndroidResource Include="Resources\drawable\shape_avatar_bg.xml" />
-    <AndroidResource Include="Resources\drawable\bg_eta_chip.xml" />
-    <AndroidResource Include="Resources\drawable\bg_grab_handle.xml" />
-    <AndroidResource Include="Resources\drawable\bg_top_panel.xml" />
-    <AndroidResource Include="Resources\drawable\info_panel_bg.xml" />
-    <AndroidResource Include="Resources\layout\dialog_edit_user.xml">
-      <SubType>Designer</SubType>
-    </AndroidResource>
-    <AndroidResource Include="Resources\layout\banned_email_item.xml" />
-    <AndroidResource Include="Resources\layout\fragment_banned_users.xml" />
-    <AndroidResource Include="Resources\layout\fragment_pending_requests.xml" />
-    <AndroidResource Include="Resources\layout\pending_approval_layout.xml" />
-    <AndroidResource Include="Resources\layout\pending_request_item.xml" />
-    <AndroidResource Include="Resources\layout\activity_map_picker.xml" />
-    <AndroidResource Include="Resources\values\secrets.xml" />
-    <AndroidResource Include="Resources\layout\fragment_bus_info_sheet.xml" />
-    <AndroidResource Include="Resources\layout\fragment_bus_map.xml" />
-    <AndroidResource Include="Resources\layout\activity_bus_map.xml" />
-    <AndroidResource Include="Resources\layout\fragment_public_bus_info.xml" />
-    <AndroidResource Include="Resources\layout\fragment_public_bus_map.xml" />
-    <AndroidResource Include="Resources\layout\activity_public_bus_map.xml" />
-    <AndroidResource Include="Resources\mipmap-hdpi\ic_app_logo.png" />
-    <AndroidResource Include="Resources\mipmap-mdpi\ic_app_logo.png" />
-    <AndroidResource Include="Resources\mipmap-xhdpi\ic_app_logo.png" />
-    <AndroidResource Include="Resources\mipmap-xxhdpi\ic_app_logo.png" />
-    <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_app_logo.png" />
-  </ItemGroup>
+
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
-    Other similar extension points exist, see Microsoft.Common.targets.
-    <Target Name="BeforeBuild">
-    </Target>
-    <Target Name="AfterBuild">
-    </Target>
-  -->
 </Project>
