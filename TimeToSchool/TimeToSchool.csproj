@@ -107,6 +107,7 @@
     <Compile Include="Service\BusesRepository.cs" />
     <Compile Include="Service\BannedEmailsRepository.cs" />
     <Compile Include="Service\TripTrackingService.cs" />
+    <Compile Include="Service\StopTripReceiver.cs" />
     <Compile Include="Service\DirectionsApiService.cs" />
     <Compile Include="Service\RoadsApiService.cs" />
     <Compile Include="Adapter\ActiveBusViewAdapter.cs" />

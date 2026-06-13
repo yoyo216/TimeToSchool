@@ -3,6 +3,7 @@
 	<uses-sdk android:minSdkVersion="21" android:targetSdkVersion="33" />
 	<application android:allowBackup="true" android:icon="@mipmap/ic_app_logo" android:label="@string/app_name" android:supportsRtl="true" android:theme="@style/AppTheme">
 		<meta-data android:name="com.google.android.geo.API_KEY" android:value="@string/google_maps_key" />
+		<service android:name="com.companyname.timetoschool.TripTrackingService" android:foregroundServiceType="location" />
 	</application>
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 	<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -10,4 +11,5 @@
 	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 	<uses-permission android:name="android.permission.INTERNET" />
+	<uses-permission android:name="android.permission.WAKE_LOCK" />
 </manifest>

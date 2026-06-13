@@ -13,13 +13,19 @@ namespace TimeToSchool.Service
     [Service(Name = "com.companyname.timetoschool.TripTrackingService", Exported = false)]
     public class TripTrackingService : Android.App.Service, ILocationListener
     {
-        private const string ChannelId = "trip_channel";
+        private const string ChannelId = "trip_channel_v2";
         private const int NotifId = 1;
+        private const string ActionRepostNotification = "com.companyname.timetoschool.REPOST_NOTIFICATION";
 
         public static bool IsRunning { get; private set; }
         public static event Action TripAutoStopped;
+        public static event Action TripStoppedFromNotification;
+
+        public static void FireStoppedFromNotification() =>
+            new Handler(Looper.MainLooper).Post(() => TripStoppedFromNotification?.Invoke());
 
         private LocationManager _locManager;
+        private PowerManager.WakeLock _wakeLock;
         private ActiveBus _tripData;
         private double _firstStopLat;
         private double _firstStopLng;
@@ -28,12 +34,23 @@ namespace TimeToSchool.Service
         private double _schoolLng;
         private bool _hasSchoolLocation;
         private bool _autoStopping;
+        private DateTime _lastFirebaseWrite = DateTime.MinValue;
 
         public override IBinder OnBind(Intent intent) => null;
 
         public override StartCommandResult OnStartCommand(Intent intent, StartCommandFlags flags, int startId)
         {
+            if (intent?.Action == ActionRepostNotification)
+            {
+                if (IsRunning && _tripData != null)
+                    StartForeground(NotifId, BuildNotification());
+                return StartCommandResult.Sticky;
+            }
+
             IsRunning = true;
+            var pm = (PowerManager)GetSystemService(PowerService);
+            _wakeLock = pm.NewWakeLock(WakeLockFlags.Partial, ProManager.TAG + ":TripWakeLock");
+            _wakeLock.Acquire();
             var tripJson = intent?.GetStringExtra("trip_json");
             if (tripJson == null) { StopSelf(); return StartCommandResult.NotSticky; }
 
@@ -45,26 +62,10 @@ namespace TimeToSchool.Service
             _ = GeocodeSchoolAsync(_tripData.SchoolName);
 
             CreateNotificationChannel();
-
-            var tapIntent = new Intent(this, typeof(DriverActivity));
-            tapIntent.AddFlags(ActivityFlags.SingleTop);
-            var pendingFlags = Build.VERSION.SdkInt >= BuildVersionCodes.M
-                ? PendingIntentFlags.Immutable
-                : PendingIntentFlags.UpdateCurrent;
-            var pendingIntent = PendingIntent.GetActivity(this, 0, tapIntent, pendingFlags);
-
-            var notification = new NotificationCompat.Builder(this, ChannelId)
-                .SetContentTitle("נסיעה פעילה")
-                .SetContentText($"{_tripData.BusLine} — {_tripData.Town}")
-                .SetSmallIcon(Resource.Mipmap.ic_launcher)
-                .SetContentIntent(pendingIntent)
-                .SetOngoing(true)
-                .Build();
-
-            StartForeground(NotifId, notification);
+            StartForeground(NotifId, BuildNotification());
 
             _locManager = (LocationManager)GetSystemService(LocationService);
-            _locManager.RequestLocationUpdates(LocationManager.NetworkProvider, 15000, 2, this);
+            StartLocationUpdates();
 
             var lastKnown = _locManager.GetLastKnownLocation(LocationManager.NetworkProvider)
                          ?? _locManager.GetLastKnownLocation(LocationManager.GpsProvider);
@@ -74,17 +75,55 @@ namespace TimeToSchool.Service
             return StartCommandResult.Sticky;
         }
 
+        private Notification BuildNotification()
+        {
+            var pendingFlags = Build.VERSION.SdkInt >= BuildVersionCodes.M
+                ? PendingIntentFlags.Immutable
+                : PendingIntentFlags.UpdateCurrent;
+
+            var tapIntent = new Intent(this, typeof(DriverActivity));
+            tapIntent.AddFlags(ActivityFlags.SingleTop);
+            var tapPendingIntent = PendingIntent.GetActivity(this, 0, tapIntent, pendingFlags);
+
+            var stopIntent = new Intent(this, typeof(StopTripReceiver));
+            stopIntent.SetAction(StopTripReceiver.Action);
+            var stopPendingIntent = PendingIntent.GetBroadcast(this, 1, stopIntent, pendingFlags);
+
+            var repostIntent = new Intent(this, typeof(TripTrackingService));
+            repostIntent.SetAction(ActionRepostNotification);
+            var repostPendingIntent = Build.VERSION.SdkInt >= BuildVersionCodes.O
+                ? PendingIntent.GetForegroundService(this, 2, repostIntent, pendingFlags)
+                : PendingIntent.GetService(this, 2, repostIntent, pendingFlags);
+
+            return new NotificationCompat.Builder(this, ChannelId)
+                .SetContentTitle("נסיעה פעילה")
+                .SetContentText($"{_tripData.BusLine} — {_tripData.Town}")
+                .SetSmallIcon(Resource.Mipmap.ic_launcher)
+                .SetContentIntent(tapPendingIntent)
+                .SetOngoing(true)
+                .SetAutoCancel(false)
+                .AddAction(Android.Resource.Drawable.IcMediaPause, "כבה נסיעה", stopPendingIntent)
+                .SetDeleteIntent(repostPendingIntent)
+                .Build();
+        }
+
         public void OnLocationChanged(Location location)
         {
             if (_tripData == null || _autoStopping) return;
+            if (location.HasAccuracy && location.Accuracy > 80f) return;
+
             _tripData.Latitude = location.Latitude;
             _tripData.Longitude = location.Longitude;
             if (!_tripData.IsVisible && _hasFirstStop)
                 TryUnlockVisibility(location);
             if (_hasSchoolLocation)
                 CheckSchoolArrival(location);
-            if (!_autoStopping)
+
+            if (!_autoStopping && (DateTime.UtcNow - _lastFirebaseWrite).TotalSeconds >= 10)
+            {
+                _lastFirebaseWrite = DateTime.UtcNow;
                 _ = BusesRepository.UpdateBusLocation(_tripData);
+            }
         }
 
         public override void OnTaskRemoved(Intent rootIntent)
@@ -97,12 +136,14 @@ namespace TimeToSchool.Service
         {
             IsRunning = false;
             _locManager?.RemoveUpdates(this);
+            _wakeLock?.Release();
+            _wakeLock = null;
             if (_tripData != null)
             {
                 _tripData.Status = "Inactive";
                 _ = BusesRepository.UpdateBusLocation(_tripData);
             }
-            StopForeground(true);
+            StopForeground(StopForegroundFlags.Remove);
             base.OnDestroy();
         }
 
@@ -159,12 +200,33 @@ namespace TimeToSchool.Service
             if (Build.VERSION.SdkInt < BuildVersionCodes.O) return;
             var notifManager = (NotificationManager)GetSystemService(NotificationService);
             if (notifManager.GetNotificationChannel(ChannelId) != null) return;
-            var channel = new NotificationChannel(ChannelId, "נסיעה פעילה", NotificationImportance.Low);
+            var channel = new NotificationChannel(ChannelId, "נסיעה פעילה", NotificationImportance.Default);
             notifManager.CreateNotificationChannel(channel);
         }
 
         public void OnProviderDisabled(string provider) { }
-        public void OnProviderEnabled(string provider) { }
+
+        public void OnProviderEnabled(string provider) => TryRegisterProvider(provider);
+
         public void OnStatusChanged(string provider, Availability status, Bundle extras) { }
+
+        private void StartLocationUpdates()
+        {
+            TryRegisterProvider(LocationManager.NetworkProvider);
+            TryRegisterProvider(LocationManager.GpsProvider);
+        }
+
+        private void TryRegisterProvider(string provider)
+        {
+            try
+            {
+                if (_locManager.IsProviderEnabled(provider))
+                    _locManager.RequestLocationUpdates(provider, 15000, 25, this);
+            }
+            catch (Exception ex)
+            {
+                Android.Util.Log.Warn(ProManager.TAG, $"[Location] {provider} unavailable: {ex.Message}");
+            }
+        }
     }
 }

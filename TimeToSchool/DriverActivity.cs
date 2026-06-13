@@ -174,11 +174,22 @@ namespace TimeToSchool
         {
             base.OnResume();
             TripTrackingService.TripAutoStopped += HandleAutoTripStop;
+            TripTrackingService.TripStoppedFromNotification += HandleTripStoppedFromNotification;
+
+            if (!TripTrackingService.IsRunning && _isGlobalDriving)
+            {
+                foreach (var card in _driverCards.Where(c => c.IsDriving))
+                    card.IsDriving = false;
+                _isGlobalDriving = false;
+                SaveCardsIfRemembered();
+                RefreshCards();
+            }
         }
 
         protected override void OnPause()
         {
             TripTrackingService.TripAutoStopped -= HandleAutoTripStop;
+            TripTrackingService.TripStoppedFromNotification -= HandleTripStoppedFromNotification;
             base.OnPause();
             SaveCardsIfRemembered();
         }
@@ -415,6 +426,15 @@ namespace TimeToSchool
             SaveCardsIfRemembered();
             RefreshCards();
             Android.Widget.Toast.MakeText(this, "הנסיעה הסתיימה — הגעת ליעד", ToastLength.Long).Show();
+        }
+
+        private void HandleTripStoppedFromNotification()
+        {
+            foreach (var card in _driverCards.Where(c => c.IsDriving))
+                card.IsDriving = false;
+            _isGlobalDriving = false;
+            SaveCardsIfRemembered();
+            RefreshCards();
         }
 
         private void StopAllActiveTrips()
