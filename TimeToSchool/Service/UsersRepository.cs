@@ -305,6 +305,14 @@ namespace TimeToSchool.Service
                 throw new Exception("MarkAllUsersAsApproved failed");
             }
         }
+        public static IListenerRegistration ListenUserStatus(string userId, FirestoreEventListener listener)
+        {
+            return FirebaseFirestore.Instance
+                .Collection("users")
+                .Document(userId)
+                .AddSnapshotListener(listener);
+        }
+
         public static void FetchUsersListener()
         {
             FirestoreEventListener = new FirestoreEventListener();
