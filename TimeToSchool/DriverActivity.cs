@@ -452,6 +452,7 @@ namespace TimeToSchool
             Dialog dialog = new Dialog(this);
             dialog.SetContentView(Resource.Layout.dialog_route_selector);
             dialog.Window.SetLayout(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
+            dialog.Window.SetSoftInputMode(SoftInput.StateHidden | SoftInput.AdjustResize);
 
             var autoSchool = dialog.FindViewById<AutoCompleteTextView>(Resource.Id.dialogAutoSchool);
             var autoTown   = dialog.FindViewById<AutoCompleteTextView>(Resource.Id.dialogAutoTown);
@@ -474,24 +475,33 @@ namespace TimeToSchool
                 UIHelper.SetFieldEnabled(autoTown, true);
                 UIHelper.SetFieldEnabled(autoBus, false);
                 autoTown.Adapter = CreateAdapter(BusesRepository.GetTownsForSchool(_allRoutes, selectedSchool).ToArray());
-                autoTown.ShowDropDown();
                 ShowKeyboard(autoTown);
+                autoTown.PostDelayed(() => {
+                    if (autoTown.HasFocus && !autoTown.IsPopupShowing)
+                        autoTown.ShowDropDown();
+                }, 350);
             };
 
             autoTown.ItemClick += (s, e) =>
             {
                 autoBus.Text = string.Empty;
                 UIHelper.SetFieldEnabled(autoBus, true);
-                autoBus.Adapter = CreateAdapter(BusesRepository.GetBusesForRoute(_allRoutes, autoSchool.Text, autoTown.Text).ToArray());
-                autoBus.ShowDropDown();
+                autoBus.Adapter = CreateAdapter(BusesRepository.GetBusesForRoute(_allRoutes, autoSchool.Text, autoTown.Text, includeAnyOption: false).ToArray());
                 ShowKeyboard(autoBus);
+                autoBus.PostDelayed(() => {
+                    if (autoBus.HasFocus && !autoBus.IsPopupShowing)
+                        autoBus.ShowDropDown();
+                }, 350);
             };
+
+            autoBus.ItemClick += (s, e) => UIHelper.HideKeyboard(autoBus);
 
             btnSave.Click += (s, e) =>
             {
+                UIHelper.HideKeyboard(btnSave);
                 var validSchools = BusesRepository.GetSchools(_allRoutes);
                 var validTowns   = BusesRepository.GetTownsForSchool(_allRoutes, autoSchool.Text);
-                var validBuses   = BusesRepository.GetBusesForRoute(_allRoutes, autoSchool.Text, autoTown.Text);
+                var validBuses   = BusesRepository.GetBusesForRoute(_allRoutes, autoSchool.Text, autoTown.Text, includeAnyOption: false);
 
                 if (!validSchools.Contains(autoSchool.Text))
                 {

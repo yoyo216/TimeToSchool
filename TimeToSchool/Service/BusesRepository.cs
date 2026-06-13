@@ -235,11 +235,11 @@ namespace TimeToSchool.Service
         public static List<string> GetTownsForSchool(List<BusRoute> routes, string schoolName) =>
             routes.Where(r => r.School == schoolName).Select(r => r.Town).Distinct().OrderBy(t => t).ToList();
 
-        public static List<string> GetBusesForRoute(List<BusRoute> routes, string school, string town)
+        public static List<string> GetBusesForRoute(List<BusRoute> routes, string school, string town, bool includeAnyOption = true)
         {
             var buses = routes.Where(r => r.School == school && r.Town == town)
                               .Select(r => r.BusLine).OrderBy(b => b).ToList();
-            if (buses.Count > 0)
+            if (includeAnyOption && buses.Count > 0)
                 buses.Insert(0, "Any Available Bus");
             return buses;
         }

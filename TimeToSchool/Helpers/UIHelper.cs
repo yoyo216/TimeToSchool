@@ -30,31 +30,37 @@ namespace TimeToSchool.Helpers
                 if (e.HasFocus) {
                     keyboardReady[0] = false;
                     view.PostDelayed(() => {
-                        keyboardReady[0] = true;
-                        ShowAllItems(view);
+                        if (view.HasFocus)
+                            keyboardReady[0] = true;
                     }, 350);
+                } else {
+                    keyboardReady[0] = false;
                 }
             };
 
-            view.Click += (s, e) => {
-                if (keyboardReady[0])
-                    ShowAllItems(view);
-            };
+            // No Click handler: ExposedDropdownMenu already toggles open/close on tap.
+            // Adding our own Click handler would fight the toggle and prevent the user
+            // from ever closing the dropdown by tapping the field again.
 
             view.AfterTextChanged += (s, e) => {
                 if (string.IsNullOrEmpty(view.Text) && keyboardReady[0])
                     ShowAllItems(view);
             };
-
         }
 
         private static void ShowAllItems(AutoCompleteTextView view)
         {
             var filter = (view.Adapter as IFilterable)?.Filter;
             if (filter != null)
-                filter.InvokeFilter((string)null, new FilterListener(() => view.Post(() => view.ShowDropDown())));
+                filter.InvokeFilter((string)null, new FilterListener(() => view.Post(() => {
+                    if (!view.IsPopupShowing)
+                        view.ShowDropDown();
+                })));
             else
-                view.Post(() => view.ShowDropDown());
+                view.Post(() => {
+                    if (!view.IsPopupShowing)
+                        view.ShowDropDown();
+                });
         }
 
         private class FilterListener : Java.Lang.Object, Filter.IFilterListener
@@ -72,6 +78,13 @@ namespace TimeToSchool.Helpers
                 imm.HideSoftInputFromWindow(activity.CurrentFocus.WindowToken, 0);
                 activity.CurrentFocus.ClearFocus();
             }
+        }
+
+        public static void HideKeyboard(View view)
+        {
+            var imm = (Android.Views.InputMethods.InputMethodManager)view.Context.GetSystemService(Android.Content.Context.InputMethodService);
+            imm.HideSoftInputFromWindow(view.WindowToken, 0);
+            view.ClearFocus();
         }
         public static Dialog CreateProgressDialog(Activity activity)
         {
