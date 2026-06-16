@@ -46,6 +46,26 @@ namespace TimeToSchool.Service
                 return null; // Indicate failure
             }
         }
+        public static async Task<bool> SendPasswordResetEmailAsync(string email)
+        {
+            try
+            {
+                FirebaseAuth mAuth = FirebaseAuth.Instance;
+                await mAuth.SendPasswordResetEmail(email);
+                Log.Debug(ProManager.TAG, $"SendPasswordResetEmailAsync: reset email sent to {email}");
+                return true;
+            }
+            catch (FirebaseAuthException ex)
+            {
+                Log.Error(ProManager.TAG, $"SendPasswordResetEmailAsync failed: {ex.Message}");
+                return false;
+            }
+            catch (System.Exception ex)
+            {
+                Log.Error(ProManager.TAG, $"SendPasswordResetEmailAsync general error: {ex.Message}");
+                return false;
+            }
+        }
         public static async Task<string> InsertAsync(Model.User user)
         {
             try

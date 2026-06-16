@@ -187,6 +187,7 @@
     <AndroidResource Include="Resources\layout\bus_item_card.xml" />
     <AndroidResource Include="Resources\layout\dialog_bus_form.xml" />
     <AndroidResource Include="Resources\layout\dialog_edit_user.xml" />
+    <AndroidResource Include="Resources\layout\dialog_forgot_password.xml" />
     <AndroidResource Include="Resources\layout\dialog_route_selector.xml" />
     <AndroidResource Include="Resources\layout\drawer_base.xml" />
     <AndroidResource Include="Resources\layout\driver_route_item.xml" />

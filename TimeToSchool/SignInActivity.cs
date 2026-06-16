@@ -23,6 +23,7 @@ namespace TimeToSchool
         private EditText etEmail, etPass;
         private Button btnSignIn;
         private TextView btnSighUp;
+        private TextView btnForgotPassword;
         private CheckBox cbRememberMe;
         private Dialog mProgressDialog;
         private PreferenceService _prefService; // Define service
@@ -47,12 +48,14 @@ namespace TimeToSchool
             etPass = FindViewById<EditText>(Resource.Id.et_password2);
             btnSignIn = FindViewById<Button>(Resource.Id.btn_login2);
             btnSighUp = FindViewById<TextView>(Resource.Id.btn_sign_up);
+            btnForgotPassword = FindViewById<TextView>(Resource.Id.btn_forget_password);
 
             // FIX: Initialize the CheckBox!
             cbRememberMe = FindViewById<CheckBox>(Resource.Id.cbRememberMe);
 
             btnSignIn.SetOnClickListener(this);
             btnSighUp.SetOnClickListener(this);
+            btnForgotPassword.SetOnClickListener(this);
 
             mProgressDialog = UIHelper.CreateProgressDialog(this);
 
@@ -113,6 +116,42 @@ namespace TimeToSchool
             {
                 StartActivity(typeof(SignUpActivity));
             }
+            else if (v == btnForgotPassword)
+            {
+                ShowForgotPasswordDialog();
+            }
+        }
+
+        private void ShowForgotPasswordDialog()
+        {
+            var dialogView = LayoutInflater.Inflate(Resource.Layout.dialog_forgot_password, null);
+            var etForgotEmail = dialogView.FindViewById<EditText>(Resource.Id.et_forgot_email);
+            etForgotEmail.Text = etEmail.Text;
+
+            new Android.App.AlertDialog.Builder(this)
+                .SetTitle("Reset Password")
+                .SetView(dialogView)
+                .SetPositiveButton("Send", (s, e) => SendPasswordResetEmail(etForgotEmail.Text))
+                .SetNegativeButton("Cancel", (s, e) => { })
+                .Show();
+        }
+
+        private async void SendPasswordResetEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email) || !email.Contains("@"))
+            {
+                Toast.MakeText(this, "Please enter a valid email address", ToastLength.Short).Show();
+                return;
+            }
+
+            mProgressDialog.Show();
+            bool success = await UsersRepository.SendPasswordResetEmailAsync(email);
+            mProgressDialog.Dismiss();
+
+            Toast.MakeText(this, success
+                ? "Password reset email sent. Check your inbox."
+                : "Failed to send reset email. Make sure the address is correct.",
+                ToastLength.Long).Show();
         }
 
         private bool Validate()
