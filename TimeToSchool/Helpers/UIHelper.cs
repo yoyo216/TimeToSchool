@@ -63,6 +63,15 @@ namespace TimeToSchool.Helpers
                 });
         }
 
+        // Programmatically setting .Text (e.g. restoring a saved selection) runs it through the
+        // adapter's filter just like typing would, narrowing the dropdown to that one match. Call
+        // this afterward to reset the adapter back to its full list without touching the displayed text.
+        public static void ResetDropdownFilter(AutoCompleteTextView view)
+        {
+            var filter = (view.Adapter as IFilterable)?.Filter;
+            filter?.InvokeFilter((string)null, null);
+        }
+
         private class FilterListener : Java.Lang.Object, Filter.IFilterListener
         {
             private readonly Action _onComplete;
