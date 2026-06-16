@@ -58,7 +58,8 @@ namespace TimeToSchool.Service
                 Id = c.Id,
                 FirebaseDocumentId = c.FirebaseDocumentId,
                 TripData = c.TripData,
-                IsDriving = false
+                IsDriving = false,
+                SuppressVisibilityWarning = c.SuppressVisibilityWarning
             }).ToList();
             _prefs.Edit().PutString(DRIVER_CARDS_KEY, JsonConvert.SerializeObject(snapshot)).Apply();
         }

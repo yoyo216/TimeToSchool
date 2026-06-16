@@ -108,6 +108,8 @@
     <Compile Include="Service\BannedEmailsRepository.cs" />
     <Compile Include="Service\TripTrackingService.cs" />
     <Compile Include="Service\StopTripReceiver.cs" />
+    <Compile Include="Service\SimulatedTripService.cs" />
+    <Compile Include="Service\StopSimulationReceiver.cs" />
     <Compile Include="Service\DirectionsApiService.cs" />
     <Compile Include="Service\RoadsApiService.cs" />
     <Compile Include="Adapter\ActiveBusViewAdapter.cs" />
@@ -156,6 +158,8 @@
     <AndroidResource Include="Resources\drawable\ic_arrow_right.xml" />
     <AndroidResource Include="Resources\drawable\ic_backgound_bus.png" />
     <AndroidResource Include="Resources\drawable\ic_bus_small.xml" />
+    <AndroidResource Include="Resources\drawable\ic_eye.xml" />
+    <AndroidResource Include="Resources\drawable\ic_eye_off.xml" />
     <AndroidResource Include="Resources\drawable\ic_femaleicon.png" />
     <AndroidResource Include="Resources\drawable\ic_icon_bus.png" />
     <AndroidResource Include="Resources\drawable\ic_icon_person.png" />

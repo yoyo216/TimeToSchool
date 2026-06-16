@@ -8,5 +8,6 @@ namespace TimeToSchool.Model
         public string FirebaseDocumentId { get; set; }
         public ActiveBus TripData { get; set; }
         public bool IsDriving { get; set; } = false;
+        public bool SuppressVisibilityWarning { get; set; } = false;
     }
 }

@@ -4,6 +4,7 @@ using Android.Content.PM;
 using Android.Graphics;
 using Android.Locations;
 using Android.OS;
+using Android.Runtime;
 using Android.Views;
 using Android.Views.InputMethods;
 using Android.Widget;
@@ -40,6 +41,7 @@ namespace TimeToSchool
         private LinearLayout _chipVisibility;
         private Android.Views.View _dotVisibility;
         private TextView _tvVisibility;
+        private ImageButton _btnToggleVisibility;
         private TextView _tvRouteInfo;
 
         private LocationManager locManager;
@@ -49,28 +51,6 @@ namespace TimeToSchool
         private bool _isGlobalDriving = false;
 
         private Button _btnSimulate;
-        private bool _simulating;
-        private int _simIndex;
-        private Handler _simHandler;
-        private ActiveBus _simRoute;
-        private double _simFirstStopLat;
-        private double _simFirstStopLng;
-        private bool _simHasFirstStop;
-        private readonly (double Lat, double Lng)[] _simWaypoints =
-        {
-            (32.164200, 34.887500), // start — southern entry to Ramot HaShavim
-            (32.164900, 34.888100),
-            (32.165600, 34.888700),
-            (32.166300, 34.889400),
-            (32.167000, 34.890100),
-            (32.167484, 34.890852), // user-specified target waypoint
-            (32.167900, 34.891500),
-            (32.168500, 34.892200),
-            (32.169200, 34.892900),
-            (32.169900, 34.893600),
-            (32.170500, 34.894200),
-            (32.171100, 34.894800), // end — northern exit of Ramot HaShavim
-        };
 
         protected override int GetContentLayoutId() => Resource.Layout.driverpage_layout;
 
@@ -117,7 +97,10 @@ namespace TimeToSchool
             _chipVisibility  = FindViewById<LinearLayout>(Resource.Id.chipVisibility);
             _dotVisibility   = FindViewById<Android.Views.View>(Resource.Id.dotVisibility);
             _tvVisibility    = FindViewById<TextView>(Resource.Id.tvVisibility);
+            _btnToggleVisibility = FindViewById<ImageButton>(Resource.Id.btnToggleVisibility);
             _tvRouteInfo     = FindViewById<TextView>(Resource.Id.tvNoRoute);
+
+            _btnToggleVisibility.Click += (s, e) => ToggleVisibility();
 
             UpdateInfoPanel();
 
@@ -125,7 +108,19 @@ namespace TimeToSchool
             if (ProManager.DebugMode)
             {
                 _btnSimulate.Visibility = ViewStates.Visible;
-                _btnSimulate.Click += async (s, e) => { if (_simulating) StopSimulation(); else await StartSimulation(); };
+                UpdateSimulateButtonText();
+                _btnSimulate.Click += async (s, e) =>
+                {
+                    if (SimulatedTripService.IsRunning)
+                    {
+                        StopService(new Intent(this, typeof(SimulatedTripService)));
+                        UpdateSimulateButtonText();
+                    }
+                    else
+                    {
+                        await StartSimulation();
+                    }
+                };
             }
         }
 
@@ -175,6 +170,9 @@ namespace TimeToSchool
             base.OnResume();
             TripTrackingService.TripAutoStopped += HandleAutoTripStop;
             TripTrackingService.TripStoppedFromNotification += HandleTripStoppedFromNotification;
+            TripTrackingService.VisibilityChanged += HandleVisibilityChanged;
+            SimulatedTripService.SimulationStoppedFromNotification += HandleSimulationStoppedFromNotification;
+            UpdateSimulateButtonText();
 
             if (!TripTrackingService.IsRunning && _isGlobalDriving)
             {
@@ -190,17 +188,15 @@ namespace TimeToSchool
         {
             TripTrackingService.TripAutoStopped -= HandleAutoTripStop;
             TripTrackingService.TripStoppedFromNotification -= HandleTripStoppedFromNotification;
+            TripTrackingService.VisibilityChanged -= HandleVisibilityChanged;
+            SimulatedTripService.SimulationStoppedFromNotification -= HandleSimulationStoppedFromNotification;
             base.OnPause();
             SaveCardsIfRemembered();
         }
 
+        // Logging out only stops real driver trips — a running bus simulation is intentionally
+        // left untouched so testers can log in as a different user while it keeps reporting.
         protected override void OnBeforeLogout() => StopAllActiveTrips();
-
-        protected override void OnDestroy()
-        {
-            StopSimulation();
-            base.OnDestroy();
-        }
 
         #region Bus Simulation (Debug)
 
@@ -213,11 +209,9 @@ namespace TimeToSchool
                 return;
             }
 
-            _simHasFirstStop = route.FirstStopLat.HasValue && route.FirstStopLng.HasValue;
-            _simFirstStopLat = route.FirstStopLat ?? 0;
-            _simFirstStopLng = route.FirstStopLng ?? 0;
+            bool hasFirstStop = route.FirstStopLat.HasValue && route.FirstStopLng.HasValue;
 
-            _simRoute = new ActiveBus
+            var simRoute = new ActiveBus
             {
                 SchoolName = route.School,
                 Town       = route.Town,
@@ -226,53 +220,29 @@ namespace TimeToSchool
                 DriverName = ProManager.CurrentUser?.FirstName ?? "Simulator",
                 Status     = "Active",
                 Date       = DateTime.Now.ToString("yyyy-MM-dd"),
-                IsVisible  = !_simHasFirstStop,
+                IsVisible  = !hasFirstStop,
             };
 
-            _simulating = true;
-            _simIndex   = 0;
-            _btnSimulate.Text = "Stop Simulation";
-            _simHandler = new Handler(Looper.MainLooper);
-
-            AdvanceSimStep();
-        }
-
-        private void AdvanceSimStep()
-        {
-            if (!_simulating) return;
-
-            var wp = _simWaypoints[_simIndex % _simWaypoints.Length];
-            _simRoute.Latitude  = wp.Lat;
-            _simRoute.Longitude = wp.Lng;
-            _simIndex++;
-
-            if (!_simRoute.IsVisible && _simHasFirstStop)
+            var intent = new Intent(this, typeof(SimulatedTripService));
+            intent.PutExtra("trip_json", JsonConvert.SerializeObject(simRoute));
+            if (hasFirstStop)
             {
-                float[] dist = new float[1];
-                Android.Locations.Location.DistanceBetween(wp.Lat, wp.Lng, _simFirstStopLat, _simFirstStopLng, dist);
-                if (dist[0] <= 50f)
-                    _simRoute.IsVisible = true;
+                intent.PutExtra("has_first_stop", true);
+                intent.PutExtra("first_stop_lat", route.FirstStopLat.Value);
+                intent.PutExtra("first_stop_lng", route.FirstStopLng.Value);
             }
 
-            _ = BusesRepository.UpdateBusLocation(_simRoute);
-            Android.Util.Log.Debug(ProManager.TAG, $"[SIM] step {_simIndex}: {wp.Lat},{wp.Lng}");
-
-            _simHandler.PostDelayed(AdvanceSimStep, 8_000);
+            ContextCompat.StartForegroundService(this, intent);
+            UpdateSimulateButtonText();
         }
 
-        private void StopSimulation()
+        private void UpdateSimulateButtonText()
         {
-            if (!_simulating) return;
-            _simulating = false;
-            _simHandler?.RemoveCallbacksAndMessages(null);
-            _btnSimulate.Text = "Simulate Bus (DEBUG)";
-
-            if (_simRoute != null)
-            {
-                _simRoute.Status = "Inactive";
-                _ = BusesRepository.UpdateBusLocation(_simRoute);
-            }
+            if (_btnSimulate == null) return;
+            _btnSimulate.Text = SimulatedTripService.IsRunning ? "Stop Simulation" : "Simulate Bus (DEBUG)";
         }
+
+        private void HandleSimulationStoppedFromNotification() => UpdateSimulateButtonText();
 
         #endregion
 
@@ -336,10 +306,19 @@ namespace TimeToSchool
                     _tvRouteInfo.Text = $"{t.SchoolName} · {t.Town} · קו {t.BusLine}";
                     _tvRouteInfo.SetTextColor(Color.ParseColor("#1E293B"));
 
+                    _btnToggleVisibility.Visibility = ViewStates.Visible;
                     if (t.IsVisible)
+                    {
                         SetChip(_chipVisibility, _dotVisibility, _tvVisibility, "#A855F7", "#7C3AED", "#FFFFFF", "גלוי לציבור");
+                        _btnToggleVisibility.SetImageResource(Resource.Drawable.ic_eye);
+                        _btnToggleVisibility.SetColorFilter(Color.ParseColor("#FFFFFF"));
+                    }
                     else
+                    {
                         SetChip(_chipVisibility, _dotVisibility, _tvVisibility, "#334155", "#94A3B8", "#CBD5E1", "מוסתר");
+                        _btnToggleVisibility.SetImageResource(Resource.Drawable.ic_eye_off);
+                        _btnToggleVisibility.SetColorFilter(Color.ParseColor("#CBD5E1"));
+                    }
                 }
             }
             else
@@ -348,6 +327,7 @@ namespace TimeToSchool
                 SetChip(_chipVisibility, _dotVisibility, _tvVisibility, "#334155", "#94A3B8", "#CBD5E1", "מוסתר");
                 _tvRouteInfo.Text = "לא נבחר מסלול";
                 _tvRouteInfo.SetTextColor(Color.ParseColor("#94A3B8"));
+                _btnToggleVisibility.Visibility = ViewStates.Gone;
             }
         }
 
@@ -389,33 +369,96 @@ namespace TimeToSchool
 
                 state.TripData.Status = "Inactive";
                 await BusesRepository.UpdateBusLocation(state.TripData);
+                RefreshCards();
+                return;
+            }
+
+            if (string.IsNullOrEmpty(state.TripData.BusLine))
+            {
+                Android.Widget.Toast.MakeText(this, "אנא הגדר מסלול תחילה", ToastLength.Short).Show();
+                return;
+            }
+
+            var route = _allRoutes?.FirstOrDefault(r =>
+                r.School  == state.TripData.SchoolName &&
+                r.Town    == state.TripData.Town &&
+                r.BusLine == state.TripData.BusLine);
+            bool willBeVisibleImmediately = !(route?.FirstStopLat.HasValue == true
+                                            && route.FirstStopLng.HasValue == true);
+
+            if (willBeVisibleImmediately && !state.SuppressVisibilityWarning)
+            {
+                var checkbox = new CheckBox(this) { Text = "אל תציג הודעה זו שוב למסלול זה" };
+                int pad = (int)(16 * Resources.DisplayMetrics.Density);
+                checkbox.SetPadding(pad, pad / 2, pad, pad / 2);
+
+                new AlertDialog.Builder(this)
+                    .SetTitle("נראות לציבור")
+                    .SetMessage("למסלול זה לא הוגדרה תחנה ראשונה, כך שתהיה גלוי לציבור באופן מיידי לאחר האישור. להתחיל בנסיעה?")
+                    .SetView(checkbox)
+                    .SetPositiveButton("כן, התחל", (s, e) =>
+                    {
+                        if (checkbox.Checked)
+                        {
+                            state.SuppressVisibilityWarning = true;
+                            SaveCardsIfRemembered();
+                        }
+                        StartTrip(state, route);
+                    })
+                    .SetNegativeButton("ביטול", (s, e) => { })
+                    .Show();
+                return;
+            }
+
+            StartTrip(state, route);
+        }
+
+        private void StartTrip(DriverCardState state, BusRoute route)
+        {
+            state.IsDriving = true;
+            _isGlobalDriving = true;
+
+            state.TripData.Status = "Active";
+            state.TripData.DriverName = ProManager.CurrentUser.FirstName;
+            state.TripData.DriverId = ProManager.CurrentUser.Id;
+            state.TripData.Date = DateTime.Now.ToString("yyyy-MM-dd");
+            state.TripData.IsVisible = !(route?.FirstStopLat.HasValue == true
+                                       && route.FirstStopLng.HasValue == true);
+
+            ContextCompat.StartForegroundService(this, BuildTripServiceIntent(state.TripData, route));
+            RefreshCards();
+        }
+
+        private void ToggleVisibility()
+        {
+            var drivingCard = _driverCards.FirstOrDefault(c => c.IsDriving);
+            if (drivingCard == null) return;
+
+            bool newVisibility = !drivingCard.TripData.IsVisible;
+            drivingCard.TripData.IsVisible = newVisibility;
+            SaveCardsIfRemembered();
+            UpdateInfoPanel();
+
+            if (TripTrackingService.IsRunning)
+            {
+                var intent = new Intent(this, typeof(TripTrackingService));
+                intent.SetAction(TripTrackingService.ActionToggleVisibility);
+                intent.PutExtra("is_visible", newVisibility);
+                StartService(intent);
             }
             else
             {
-                if (string.IsNullOrEmpty(state.TripData.BusLine))
-                {
-                    Android.Widget.Toast.MakeText(this, "אנא הגדר מסלול תחילה", ToastLength.Short).Show();
-                    return;
-                }
-
-                state.IsDriving = true;
-                _isGlobalDriving = true;
-
-                state.TripData.Status = "Active";
-                state.TripData.DriverName = ProManager.CurrentUser.FirstName;
-                state.TripData.DriverId = ProManager.CurrentUser.Id;
-                state.TripData.Date = DateTime.Now.ToString("yyyy-MM-dd");
-
-                var route = _allRoutes?.FirstOrDefault(r =>
-                    r.School  == state.TripData.SchoolName &&
-                    r.Town    == state.TripData.Town &&
-                    r.BusLine == state.TripData.BusLine);
-                state.TripData.IsVisible = !(route?.FirstStopLat.HasValue == true
-                                           && route.FirstStopLng.HasValue == true);
-
-                ContextCompat.StartForegroundService(this, BuildTripServiceIntent(state.TripData, route));
+                _ = BusesRepository.UpdateBusLocation(drivingCard.TripData);
             }
-            RefreshCards();
+        }
+
+        private void HandleVisibilityChanged(bool isVisible)
+        {
+            var drivingCard = _driverCards.FirstOrDefault(c => c.IsDriving);
+            if (drivingCard == null) return;
+            drivingCard.TripData.IsVisible = isVisible;
+            SaveCardsIfRemembered();
+            UpdateInfoPanel();
         }
 
         private void HandleAutoTripStop()
@@ -539,9 +582,15 @@ namespace TimeToSchool
                     return;
                 }
 
+                bool routeChanged = state.TripData.SchoolName != autoSchool.Text
+                                 || state.TripData.Town != autoTown.Text
+                                 || state.TripData.BusLine != autoBus.Text;
+
                 state.TripData.SchoolName = autoSchool.Text;
                 state.TripData.Town = autoTown.Text;
                 state.TripData.BusLine = autoBus.Text;
+                if (routeChanged)
+                    state.SuppressVisibilityWarning = false;
                 SaveCardsIfRemembered();
                 RefreshCards();
                 dialog.Dismiss();
@@ -566,6 +615,18 @@ namespace TimeToSchool
         {
             if (CheckSelfPermission(Android.Manifest.Permission.AccessFineLocation) != Permission.Granted)
                 RequestPermissions(new string[] { Android.Manifest.Permission.AccessFineLocation }, REQUEST_LOCATION_ID);
+        }
+
+        public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Permission[] grantResults)
+        {
+            base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+
+            if (requestCode == REQUEST_LOCATION_ID && (grantResults.Length == 0 || grantResults[0] != Permission.Granted))
+            {
+                Android.Widget.Toast.MakeText(this,
+                    "ללא הרשאת מיקום, מיקום האוטובוס לא ישותף עם הציבור בזמן הנסיעה",
+                    ToastLength.Long).Show();
+            }
         }
 
         private ArrayAdapter<string> CreateAdapter(string[] data) =>

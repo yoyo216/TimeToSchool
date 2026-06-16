@@ -81,7 +81,9 @@
       "Bash(xargs grep -l \"Service\")",
       "Bash(git commit *)",
       "Bash(git -C \"C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool\" add TimeToSchool/Fragments/PublicBusMapFragment.cs TimeToSchool/Resources/layout/fragment_public_bus_map.xml TimeToSchool/Service/DirectionsApiService.cs TimeToSchool/Service/BusesRepository.cs TimeToSchool/DriverActivity.cs)",
-      "Bash(git -C 'C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool' commit -m ' *)"
+      "Bash(git -C 'C:\\\\Users\\\\yorah\\\\source\\\\repos\\\\TimeToSchool' commit -m ' *)",
+      "Bash(Sort-Object FullName)",
+      "Bash(git *)"
     ]
   },
   "hooks": {

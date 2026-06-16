@@ -14,7 +14,11 @@ namespace TimeToSchool.BusinessLogic
 {
     public class ProManager
     {
+#if DEBUG
         public static bool DebugMode = true;
+#else
+        public static bool DebugMode = false;
+#endif
         public static readonly string TAG = "YoavApp";
 
         public static User CurrentUser { get; set; }
