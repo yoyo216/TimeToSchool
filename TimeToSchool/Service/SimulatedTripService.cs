@@ -90,7 +90,14 @@ namespace TimeToSchool.Service
         {
             if (!IsRunning) return;
 
-            var wp = Waypoints[_waypointIndex % Waypoints.Length];
+            if (_waypointIndex >= Waypoints.Length)
+            {
+                Android.Util.Log.Debug(ProManager.TAG, "[SIM] waypoints exhausted — stopping simulation");
+                StopSelf();
+                return;
+            }
+
+            var wp = Waypoints[_waypointIndex];
             _tripData.Latitude = wp.Lat;
             _tripData.Longitude = wp.Lng;
             _waypointIndex++;
@@ -101,7 +108,7 @@ namespace TimeToSchool.Service
             {
                 float[] dist = new float[1];
                 Location.DistanceBetween(wp.Lat, wp.Lng, _firstStopLat, _firstStopLng, dist);
-                if (dist[0] <= 50f)
+                if (dist[0] <= 75f)
                 {
                     _tripData.IsVisible = true;
                     RefreshNotification();
@@ -109,7 +116,7 @@ namespace TimeToSchool.Service
             }
 
             _ = BusesRepository.UpdateBusLocation(_tripData);
-            Android.Util.Log.Debug(ProManager.TAG, $"[SIM] step {_waypointIndex}: {wp.Lat},{wp.Lng}");
+            Android.Util.Log.Debug(ProManager.TAG, $"[SIM] step {_waypointIndex}/{Waypoints.Length}: {wp.Lat},{wp.Lng}");
 
             _stepHandler.PostDelayed(AdvanceStep, 8_000);
         }

@@ -8,10 +8,13 @@ using Android.Widget;
 using AndroidX.Fragment.App;
 using Firebase.Firestore;
 using Google.Android.Material.FloatingActionButton;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
+using TimeToSchool.BusinessLogic;
 using TimeToSchool.Model;
 using TimeToSchool.Service;
 using static TimeToSchool.Service.FireBaseHelper;
@@ -28,7 +31,8 @@ namespace TimeToSchool.Fragments
         private readonly Dictionary<string, Marker> _markers = new Dictionary<string, Marker>();
         private readonly Dictionary<string, ActiveBus> _busData = new Dictionary<string, ActiveBus>();
         private readonly Dictionary<string, long> _busTimestampMs = new Dictionary<string, long>();
-        private bool _hasAutoFocused;
+        private bool _hasStopAutoFocused;
+        private bool _hasBusAutoFocused;
         private int _currentIconSizeDp = -1;
         private string _school;
         private string _town;
@@ -45,6 +49,9 @@ namespace TimeToSchool.Fragments
         private readonly Dictionary<string, Marker> _stopMarkers = new Dictionary<string, Marker>();
         private readonly Dictionary<string, BusRoute> _stopMarkerRouteMap = new Dictionary<string, BusRoute>();
         private readonly Dictionary<string, string> _stopEtaCache = new Dictionary<string, string>();
+        private int _statusPanelVersion;
+        private Marker _schoolMarker;
+        private readonly List<Polygon> _townPolygons = new List<Polygon>();
 
         public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
@@ -89,7 +96,12 @@ namespace TimeToSchool.Fragments
 
         public void OnMapReady(GoogleMap googleMap)
         {
+            Android.Util.Log.Debug(ProManager.TAG, "[MAP] OnMapReady called");
             _map = googleMap;
+            _map.SetMapStyle(new MapStyleOptions(@"[
+                {""featureType"":""poi"",""stylers"":[{""visibility"":""off""}]},
+                {""featureType"":""transit"",""stylers"":[{""visibility"":""off""}]}
+            ]"));
             _map.SetInfoWindowAdapter(new PublicBusInfoWindowAdapter(
                 LayoutInflater.From(Context), _busData, _markers, _busTimestampMs,
                 _stopMarkerRouteMap, _stopEtaCache));
@@ -98,6 +110,8 @@ namespace TimeToSchool.Fragments
             UpdateBusIconForZoom(_map.CameraPosition.Zoom);
             StartListening();
             PlaceStopMarkersIfReady();
+            _ = FetchAndDrawTownBoundaryAsync();
+            _ = PlaceSchoolMarkerAsync();
         }
 
         private int DpToPx(int dp) =>
@@ -250,9 +264,9 @@ namespace TimeToSchool.Fragments
                         _busData.Remove(staleId);
                         _busTimestampMs.Remove(staleId);
                     }
-                    if (!_hasAutoFocused)
+                    if (!_hasBusAutoFocused)
                     {
-                        _hasAutoFocused = true;
+                        _hasBusAutoFocused = true;
                         _ = FocusByPriority(animate: false);
                     }
                     _ = UpdateStatusPanelAsync();
@@ -315,30 +329,65 @@ namespace TimeToSchool.Fragments
             if (_map == null) return;
 
             var buses = _markers.Values.Where(m => m.Visible).ToList();
-            if (buses.Count > 0) { ApplyCameraToMarkers(buses, animate); return; }
+            if (buses.Count > 0) { ApplyCameraToMarkers(buses, animate, singleZoom: 15f); return; }
 
             var stops = _stopMarkers.Values.ToList();
-            if (stops.Count > 0) { ApplyCameraToMarkers(stops, animate, singleZoom: 12f); return; }
+            if (stops.Count > 0) { ApplyCameraToMarkers(stops, animate, singleZoom: 15f, maxZoom: 15f); return; }
 
             var loc = await Task.Run(() => TryGeocode(_town))
                    ?? await Task.Run(() => TryGeocode(_school));
             if (loc == null) return;
 
+            var capturedLoc = loc;
             Activity?.RunOnUiThread(() =>
             {
-                var update = CameraUpdateFactory.NewLatLngZoom(loc, 14f);
+                var update = CameraUpdateFactory.NewLatLngZoom(capturedLoc, 14f);
                 if (animate) _map.AnimateCamera(update); else _map.MoveCamera(update);
             });
         }
 
-        private void ApplyCameraToMarkers(List<Marker> targets, bool animate, float singleZoom = 13f)
+        private async Task PlaceSchoolMarkerAsync()
         {
-            CameraUpdate update = targets.Count == 1
-                ? CameraUpdateFactory.NewLatLngZoom(targets[0].Position, singleZoom)
-                : CameraUpdateFactory.NewLatLngBounds(
-                    targets.Aggregate(new LatLngBounds.Builder(),
-                        (b, m) => { b.Include(m.Position); return b; }).Build(),
-                    200);
+            if (_map == null || string.IsNullOrEmpty(_school)) return;
+
+            var loc = await Task.Run(() => TryGeocode(_school));
+            if (loc == null) return;
+
+            Activity?.RunOnUiThread(() =>
+            {
+                if (_schoolMarker != null) return;
+                _schoolMarker = _map.AddMarker(
+                    new MarkerOptions()
+                        .SetPosition(loc)
+                        .SetTitle(_school)
+                        .SetIcon(BitmapDescriptorFactory.DefaultMarker(BitmapDescriptorFactory.HueOrange)));
+            });
+        }
+
+        private void ApplyCameraToMarkers(List<Marker> targets, bool animate, float singleZoom = 13f, float maxZoom = 0f)
+        {
+            CameraUpdate update;
+            if (targets.Count == 1)
+            {
+                update = CameraUpdateFactory.NewLatLngZoom(targets[0].Position, singleZoom);
+            }
+            else
+            {
+                var bounds = targets.Aggregate(new LatLngBounds.Builder(),
+                    (b, m) => { b.Include(m.Position); return b; }).Build();
+
+                if (maxZoom > 0f)
+                {
+                    // Move silently to derive the bounds zoom, then clamp it.
+                    _map.MoveCamera(CameraUpdateFactory.NewLatLngBounds(bounds, 200));
+                    float zoom = Math.Min(_map.CameraPosition.Zoom, maxZoom);
+                    update = CameraUpdateFactory.NewLatLngZoom(_map.CameraPosition.Target, zoom);
+                }
+                else
+                {
+                    update = CameraUpdateFactory.NewLatLngBounds(bounds, 200);
+                }
+            }
             if (animate) _map.AnimateCamera(update); else _map.MoveCamera(update);
         }
 
@@ -426,6 +475,142 @@ namespace TimeToSchool.Fragments
             _isPanelExpanded = false;
         }
 
+        private async Task FetchAndDrawTownBoundaryAsync()
+        {
+            Android.Util.Log.Debug(ProManager.TAG, $"[TownBoundary] entered — _map={_map != null}, _town='{_town}'");
+            if (_map == null || string.IsNullOrEmpty(_town)) return;
+
+            List<IList<LatLng>> rings = null;
+
+            // Try Nominatim first for the real municipal boundary.
+            string q   = Uri.EscapeDataString(_town);
+            string url = $"https://nominatim.openstreetmap.org/search?q={q}&format=json&polygon_geojson=1&limit=1&countrycodes=il";
+            Android.Util.Log.Debug(ProManager.TAG, $"[TownBoundary] fetching: {url}");
+            try
+            {
+                using var client = new HttpClient(new Xamarin.Android.Net.AndroidClientHandler());
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("TimeToSchool/1.0");
+                string json = await client.GetStringAsync(url);
+                Android.Util.Log.Debug(ProManager.TAG, $"[TownBoundary] got {json.Length} chars");
+                rings = ParseTownRings(json);
+                Android.Util.Log.Debug(ProManager.TAG, $"[TownBoundary] parsed {rings.Count} ring(s)");
+            }
+            catch (Exception ex)
+            {
+                Android.Util.Log.Error(ProManager.TAG, $"[TownBoundary] error: {ex.Message}");
+            }
+
+            // Fallback: geocode the town center and approximate with a circle polygon.
+            if (rings == null || rings.Count == 0)
+            {
+                Android.Util.Log.Warn(ProManager.TAG, "[TownBoundary] falling back to circle approximation");
+                var center = await Task.Run(() => TryGeocode(_town));
+                if (center == null) return;
+                rings = new List<IList<LatLng>> { CirclePolygon(center, 1500) };
+            }
+
+            Activity?.RunOnUiThread(() => DrawTownPolygons(rings));
+        }
+
+        private static IList<LatLng> CirclePolygon(LatLng center, double radiusMeters, int points = 64)
+        {
+            var ring = new List<LatLng>(points);
+            double lat = center.Latitude  * Math.PI / 180;
+            double lng = center.Longitude * Math.PI / 180;
+            double d   = radiusMeters / 6_371_000.0;
+            for (int i = 0; i < points; i++)
+            {
+                double bearing = 2 * Math.PI * i / points;
+                double lat2    = Math.Asin(Math.Sin(lat) * Math.Cos(d) + Math.Cos(lat) * Math.Sin(d) * Math.Cos(bearing));
+                double lng2    = lng + Math.Atan2(Math.Sin(bearing) * Math.Sin(d) * Math.Cos(lat), Math.Cos(d) - Math.Sin(lat) * Math.Sin(lat2));
+                ring.Add(new LatLng(lat2 * 180 / Math.PI, lng2 * 180 / Math.PI));
+            }
+            return ring;
+        }
+
+        private static List<IList<LatLng>> ParseTownRings(string json)
+        {
+            var result  = new List<IList<LatLng>>();
+            var arr     = JArray.Parse(json);
+            if (arr.Count == 0) return result;
+
+            var geojson = arr[0]["geojson"];
+            if (geojson == null) return result;
+
+            string type  = geojson["type"]?.ToString();
+            var    coords = geojson["coordinates"] as JArray;
+            if (coords == null) return result;
+
+            if (type == "Polygon")
+            {
+                var ring = CoordRingToLatLng(coords[0] as JArray);
+                if (ring.Count >= 3) result.Add(ring);
+            }
+            else if (type == "MultiPolygon")
+            {
+                foreach (var poly in coords)
+                {
+                    var ring = CoordRingToLatLng((poly as JArray)?[0] as JArray);
+                    if (ring.Count >= 3) result.Add(ring);
+                }
+            }
+            return result;
+        }
+
+        private static List<LatLng> CoordRingToLatLng(JArray ring)
+        {
+            var pts = new List<LatLng>();
+            if (ring == null) return pts;
+            foreach (var coord in ring)
+                pts.Add(new LatLng((double)coord[1], (double)coord[0]));
+            return pts;
+        }
+
+        private void DrawTownPolygons(List<IList<LatLng>> rings)
+        {
+            foreach (var p in _townPolygons) p.Remove();
+            _townPolygons.Clear();
+
+            if (rings.Count == 0) return;
+
+            // Large rectangle covering the Middle East — avoids the ±180° antimeridian
+            // rendering bug in Google Maps SDK while still covering all of Israel at any zoom.
+            var world = new List<LatLng>
+            {
+                new LatLng(60,  10),
+                new LatLng(60,  60),
+                new LatLng(15,  60),
+                new LatLng(15,  10),
+            };
+
+            int outsideFill = Color.Argb(25, 20, 20, 50);
+
+            try
+            {
+                var opts = new PolygonOptions();
+                foreach (var pt in world)
+                    opts.Add(pt);
+                foreach (var ring in rings)
+                {
+                    var hole = new Java.Util.ArrayList();
+                    foreach (var pt in ring) hole.Add(pt);
+                    opts.AddHole(hole);
+                }
+                opts.InvokeFillColor(outsideFill);
+                opts.InvokeStrokeColor(Color.Argb(180, 110, 130, 230));
+                opts.InvokeStrokeWidth(3f);
+                opts.InvokeStrokePattern(new List<PatternItem> { new Dot(), new Gap(12f) });
+                opts.Clickable(false);
+
+                _townPolygons.Add(_map.AddPolygon(opts));
+                Android.Util.Log.Debug(ProManager.TAG, "[TownBoundary] polygon added to map");
+            }
+            catch (Exception ex)
+            {
+                Android.Util.Log.Error(ProManager.TAG, $"[TownBoundary] DrawTownPolygons error: {ex.Message}");
+            }
+        }
+
         public override void OnDestroyView()
         {
             if (_listener != null)
@@ -436,6 +621,10 @@ namespace TimeToSchool.Fragments
             foreach (var m in _stopMarkers.Values) m.Remove();
             _stopMarkers.Clear();
             _stopMarkerRouteMap.Clear();
+            foreach (var p in _townPolygons) p.Remove();
+            _townPolygons.Clear();
+            _schoolMarker?.Remove();
+            _schoolMarker = null;
             base.OnDestroyView();
         }
 
@@ -456,6 +645,8 @@ namespace TimeToSchool.Fragments
 
         private async Task UpdateStatusPanelAsync()
         {
+            int version = ++_statusPanelVersion;
+
             var matching = _busData.Values.Where(MatchesRoute).ToList();
 
             if (matching.Any(b => b.IsVisible && b.Status == "Active" && IsTimestampFresh(b.FirestoreDocId)))
@@ -471,9 +662,12 @@ namespace TimeToSchool.Fragments
                     await FetchBusRoutesAsync();
                 var etaTasks = approaching.Select(ComputeEtaAsync).ToList();
                 var etaResults = await Task.WhenAll(etaTasks);
+                if (version != _statusPanelVersion) return;
                 Activity?.RunOnUiThread(() => ShowEtaChips(etaResults));
                 return;
             }
+
+            if (version != _statusPanelVersion) return;
 
             if (matching.Any())
             {
@@ -583,9 +777,9 @@ namespace TimeToSchool.Fragments
                 _stopMarkerRouteMap[marker.Id] = route;
             }
 
-            if (!_hasAutoFocused)
+            if (!_hasStopAutoFocused && !_hasBusAutoFocused)
             {
-                _hasAutoFocused = true;
+                _hasStopAutoFocused = true;
                 _ = FocusByPriority(animate: false);
             }
         }

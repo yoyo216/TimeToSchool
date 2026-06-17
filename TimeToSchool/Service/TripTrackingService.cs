@@ -91,7 +91,11 @@ namespace TimeToSchool.Service
             var lastKnown = _locManager.GetLastKnownLocation(LocationManager.NetworkProvider)
                          ?? _locManager.GetLastKnownLocation(LocationManager.GpsProvider);
             if (lastKnown != null)
-                OnLocationChanged(lastKnown);
+            {
+                long ageMs = Java.Lang.JavaSystem.CurrentTimeMillis() - lastKnown.Time;
+                if (ageMs < 30_000)
+                    OnLocationChanged(lastKnown);
+            }
 
             return StartCommandResult.Sticky;
         }
@@ -132,7 +136,7 @@ namespace TimeToSchool.Service
                 .Build();
         }
 
-        // Fires roughly every 15s per registered provider (see StartLocationUpdates). Low-accuracy
+        // Fires roughly every 10s per registered provider (see StartLocationUpdates). Low-accuracy
         // fixes are dropped outright; accepted fixes are throttled to one Firestore write per 10s
         // so a flaky GPS provider firing rapidly doesn't spam writes.
         public void OnLocationChanged(Location location)
@@ -188,7 +192,7 @@ namespace TimeToSchool.Service
         {
             float[] dist = new float[1];
             Location.DistanceBetween(current.Latitude, current.Longitude, _firstStopLat, _firstStopLng, dist);
-            if (dist[0] <= 50f)
+            if (dist[0] <= 75f)
             {
                 _tripData.IsVisible = true;
                 RefreshNotification();
@@ -275,7 +279,7 @@ namespace TimeToSchool.Service
             try
             {
                 if (_locManager.IsProviderEnabled(provider))
-                    _locManager.RequestLocationUpdates(provider, 15000, 25, this);
+                    _locManager.RequestLocationUpdates(provider, 10000, 25, this);
             }
             catch (Exception ex)
             {
