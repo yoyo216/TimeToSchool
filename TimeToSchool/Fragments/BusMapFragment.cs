@@ -79,7 +79,7 @@ namespace TimeToSchool.Fragments
 
         private void StartListening()
         {
-            string today = DateTime.Now.ToString("yyyy-MM-dd");
+            string today = DateTime.Now.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
             _listener = new FirestoreEventListener();
             _listener.getEvent += OnFirestoreUpdate;
             _reg = FirebaseFirestore.Instance

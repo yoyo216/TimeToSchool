@@ -219,7 +219,7 @@ namespace TimeToSchool
                 DriverId   = ProManager.CurrentUser?.Id ?? "sim",
                 DriverName = ProManager.CurrentUser?.FirstName ?? "Simulator",
                 Status     = "Active",
-                Date       = DateTime.Now.ToString("yyyy-MM-dd"),
+                Date       = DateTime.Now.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
                 IsVisible  = !hasFirstStop,
             };
 
@@ -421,9 +421,18 @@ namespace TimeToSchool
             state.TripData.Status = "Active";
             state.TripData.DriverName = ProManager.CurrentUser.FirstName;
             state.TripData.DriverId = ProManager.CurrentUser.Id;
-            state.TripData.Date = DateTime.Now.ToString("yyyy-MM-dd");
+            state.TripData.Date = DateTime.Now.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
             state.TripData.IsVisible = !(route?.FirstStopLat.HasValue == true
                                        && route.FirstStopLng.HasValue == true);
+
+            // Create the ActiveTrip document immediately so the public map finds this trip
+            // even before GPS fires. Force IsVisible=false so the bus doesn't appear at
+            // position (0,0); the tracking service will write the real location and correct
+            // visibility on its first GPS update.
+            bool savedVisible = state.TripData.IsVisible;
+            state.TripData.IsVisible = false;
+            _ = BusesRepository.UpdateBusLocation(state.TripData);
+            state.TripData.IsVisible = savedVisible;
 
             ContextCompat.StartForegroundService(this, BuildTripServiceIntent(state.TripData, route));
             RefreshCards();

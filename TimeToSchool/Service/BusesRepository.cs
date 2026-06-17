@@ -47,7 +47,7 @@ namespace TimeToSchool.Service
         // Starts a real-time listener for today's ActiveTrips (both Active and Inactive)
         public static void FetchActiveBusesListenerForToday()
         {
-            string today = DateTime.Now.ToString("yyyy-MM-dd");
+            string today = DateTime.Now.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
             ActiveTripsEventListener = new FirestoreEventListener();
             ActiveTripsRegistration = FirebaseFirestore.Instance
                 .Collection("ActiveTrips")
@@ -130,7 +130,7 @@ namespace TimeToSchool.Service
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Firestore Error: " + ex.Message);
+                Log.Error(ProManager.TAG, $"[Firestore] UpdateBusLocation failed (doc={trip?.GetDocId()}): {ex.Message}");
             }
         }
 
